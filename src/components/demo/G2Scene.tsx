@@ -98,13 +98,13 @@ function Glasses({ hud, clock }: { hud: HudData; clock?: string | undefined }) {
               g.globalAlpha = 1; g.font = `700 74px ${FONT}`;
               const lines = wrap(g, hud.body ?? "", 660);
               lines.forEach((l, i) => g.fillText(l, w / 2, 340 + i * 86));
-              if (hud.footer) { g.font = `500 38px ${FONT}`; g.globalAlpha = 0.75; g.fillText(hud.footer, w / 2, 360 + lines.length * 86); }
+              if (hud.footer) { g.font = `500 38px ${FONT}`; g.globalAlpha = 0.75; g.fillText(hud.footer, w / 2, 830); }
             }} />
           ) : (
             <LensDisplay deps={[clock]} draw={(g) => {
               // Mirrored group (scale x -1): draw flipped so the clock reads correctly in the left lens's top-left corner.
               if (!clock) return; glow(g); g.font = `700 56px ${FONT}`;
-              g.save(); g.translate(1024, 0); g.scale(-1, 1); g.fillText(clock, 1024 - 290, 270); g.restore();
+              g.save(); g.translate(1024, 0); g.scale(-1, 1); g.fillText(clock, 1024 - 330, 330); g.restore();
             }} />
           )}
           <mesh position={[-0.78, -0.25, -0.22]}><sphereGeometry args={[0.09, 24, 24]} /><meshPhysicalMaterial transmission={0.9} roughness={0.15} color="#ffffff" /></mesh>

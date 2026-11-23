@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { isValidElement } from "react";
 import dailyLife from "@/assets/daily_life_pov.mp4.asset.json";
 
 const G2Scene = lazy(() => import("./G2Scene"));
@@ -55,12 +56,15 @@ export function GlassesFilm({ hud, clock, onClose }: { hud: ReactNode; clock?: s
           <rect x="1440" y="250" width="160" height="70" rx="18" fill="currentColor" />
           <rect x="0" y="250" width="160" height="70" rx="18" fill="currentColor" />
           {phase === "play" && (
-            <text x="215" y="262" className="hud-glow fill-hud font-mono" fontSize="22" fontWeight="600" letterSpacing="2">{clock}</text>
+            <text x="300" y="320" className="hud-glow fill-hud font-mono" fontSize="22" fontWeight="600" letterSpacing="2">{clock}</text>
           )}
           {phase === "play" && (
             <foreignObject clipPath="url(#right-lens)" x="985" y="245" width="350" height="175" className="[&_*]:!text-[15px] [&_.text-base]:!text-[26px]">
-              <div className="h-full w-full overflow-hidden">{hud}</div>
+              <div className="h-full w-full overflow-hidden [&_.hud-footer]:hidden">{hud}</div>
             </foreignObject>
+          )}
+          {phase === "play" && isValidElement(hud) && (hud.props as { footer?: string }).footer && (
+            <text x="1150" y="660" textAnchor="middle" className="hud-glow fill-hud" fontSize="18" opacity="0.8">{(hud.props as { footer?: string }).footer}</text>
           )}
         </svg>
       </div>
@@ -75,7 +79,7 @@ export function Hud({ title, body, footer, alert }: { title: string; body: strin
     <div key={title + body} className="hud-in hud-glow flex aspect-[2/1] w-full flex-col justify-between rounded-xl p-2 text-hud">
       <div className="flex justify-between text-[10px] opacity-80"><span>{alert ? "⚠ " : ""}{title}</span><span /></div>
       <div className="text-center text-base font-bold leading-snug sm:text-lg">{body}</div>
-      <div className="text-center text-[10px] opacity-80">{footer}</div>
+      <div className="hud-footer text-center text-[10px] opacity-80">{footer}</div>
     </div>
   );
 }
