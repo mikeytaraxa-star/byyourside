@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1795465392243,
+      "tag": "0000_create_byyourside_live_integration_tables",
+      "breakpoints": true
+    }
+  ]
 }

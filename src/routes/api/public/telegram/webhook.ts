@@ -1,0 +1,203 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { createHash, timingSafeEqual } from "crypto";
+import { z } from "zod";
+import { parseCommand } from "@/components/demo/engine";
+import type { Json } from "@/integrations/supabase/types";
+
+const messageSchema = z
+  .object({
+    chat: z.object({ id: z.number().int() }).passthrough(),
+    from: z.object({ id: z.number().int() }).passthrough().optional(),
+    text: z.string().max(4000).optional(),
+    date: z.number().int().optional(),
+  })
+  .passthrough();
+
+const updateSchema = z
+  .object({
+    update_id: z.number().int(),
+    message: messageSchema.optional(),
+    edited_message: messageSchema.optional(),
+  })
+  .passthrough();
+
+function deriveWebhookSecret(connectionKey: string) {
+  return createHash("sha256").update(`telegram-webhook:${connectionKey}`).digest("base64url");
+}
+
+function safeEqual(a: string, b: string) {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+
+async function sendTelegram(
+  chatId: number,
+  text: string,
+  lovableKey: string,
+  connectionKey: string,
+) {
+  const response = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
+    method: "POST",
+    redirect: "manual",
+    headers: {
+      Authorization: `Bearer ${lovableKey}`,
+      "X-Connection-Api-Key": connectionKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ chat_id: chatId, text }),
+  });
+  const body = await response.text();
+  if (!response.ok) {
+    console.error(`Telegram request failed [${response.status}]: ${body}`);
+    throw new Error(`Telegram request failed [${response.status}]: ${body}`);
+  }
+  const result = z
+    .object({ ok: z.boolean(), description: z.string().optional() })
+    .passthrough()
+    .parse(JSON.parse(body));
+  if (!result.ok)
+    throw new Error(`Telegram request failed: ${result.description ?? "Unknown provider error"}`);
+}
+
+export const Route = createFileRoute("/api/public/telegram/webhook")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const connectionKey = process.env["TELEGRAM_API_KEY"];
+        const lovableKey = process.env["LOVABLE_API_KEY"];
+        if (!connectionKey || !lovableKey) {
+          return Response.json(
+            { ok: false, error: "Telegram is ready but not linked yet." },
+            { status: 503 },
+          );
+        }
+        const expectedSecret = deriveWebhookSecret(connectionKey);
+        const actualSecret = request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
+        if (!safeEqual(actualSecret, expectedSecret))
+          return new Response("Unauthorized", { status: 401 });
+
+        let update: z.infer<typeof updateSchema>;
+        try {
+          update = updateSchema.parse(await request.json());
+        } catch {
+          return Response.json({ ok: false, error: "Invalid Telegram update" }, { status: 400 });
+        }
+        const message = update.message ?? update.edited_message;
+        if (!message?.text) return Response.json({ ok: true, ignored: true });
+
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const chatId = message.chat.id;
+        const { data: stored, error: updateError } = await supabaseAdmin
+          .from("telegram_updates")
+          .upsert(
+            {
+              update_id: update.update_id,
+              chat_id: chatId,
+              telegram_user_id: message.from?.id ?? null,
+              text: message.text,
+              raw_update: update as unknown as Json,
+            },
+            { onConflict: "update_id", ignoreDuplicates: true },
+          )
+          .select("update_id");
+        if (updateError)
+          return Response.json({ ok: false, error: updateError.message }, { status: 500 });
+        if (!stored?.length) return Response.json({ ok: true, duplicate: true });
+
+        const { data: circle, error: circleError } = await supabaseAdmin
+          .from("care_circles")
+          .upsert({ telegram_chat_id: chatId }, { onConflict: "telegram_chat_id" })
+          .select("id")
+          .single();
+        if (circleError || !circle)
+          return Response.json(
+            { ok: false, error: circleError?.message ?? "Care circle unavailable" },
+            { status: 500 },
+          );
+
+        const text = message.text.trim();
+        let reply = "";
+        if (text === "/start" || text === "/help") {
+          reply =
+            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?";
+        } else if (/^\/ask\s+/i.test(text)) {
+          const question = text.replace(/^\/ask\s+/i, "").slice(0, 500);
+          const [{ data: reminders }, { data: people }] = await Promise.all([
+            supabaseAdmin
+              .from("reminders")
+              .select("title, local_time, detail, status")
+              .eq("circle_id", circle.id)
+              .order("local_time")
+              .limit(20),
+            supabaseAdmin
+              .from("people")
+              .select("name, relation, note")
+              .eq("circle_id", circle.id)
+              .limit(20),
+          ]);
+          const next = reminders?.find((reminder) => reminder.status === "pending");
+          const context =
+            [
+              ...(people ?? []).map(
+                (person) => `${person.name} is their ${person.relation}. ${person.note}`,
+              ),
+              ...(reminders ?? []).map(
+                (reminder) =>
+                  `${reminder.local_time}: ${reminder.title}${reminder.detail ? ` — ${reminder.detail}` : ""} (${reminder.status})`,
+              ),
+            ].join("\n") || "No family reminders or people have been added yet.";
+          try {
+            const { askCocoon } = await import("@/lib/cocoon.server");
+            const result = await askCocoon({
+              baseUrl: process.env["COCOON_BASE_URL"],
+              apiKey: process.env["COCOON_API_KEY"],
+              model: process.env["COCOON_MODEL"],
+              question,
+              context,
+              nextReminder: next ? { title: next.title, local_time: next.local_time } : undefined,
+            });
+            reply = result.text;
+          } catch (error) {
+            console.error(error);
+            reply = "I couldn’t reach the private AI just now. Please try again in a moment.";
+          }
+        } else {
+          const command = parseCommand(text);
+          reply = command.reply;
+          if (command.kind === "remind") {
+            const { error } = await supabaseAdmin.from("reminders").insert({
+              circle_id: circle.id,
+              local_time: command.reminder.time,
+              title: command.reminder.text,
+              detail: command.reminder.detail ?? null,
+            });
+            if (error) reply = `⚠️ I couldn’t save that reminder: ${error.message}`;
+          }
+          if (command.kind === "person") {
+            const { error } = await supabaseAdmin.from("people").upsert(
+              {
+                circle_id: circle.id,
+                name: command.person.name,
+                relation: command.person.relation,
+                note: command.person.note,
+              },
+              { onConflict: "circle_id,name" },
+            );
+            if (error) reply = `⚠️ I couldn’t save that person: ${error.message}`;
+          }
+        }
+
+        try {
+          await sendTelegram(chatId, reply, lovableKey, connectionKey);
+        } catch (error) {
+          return Response.json(
+            { ok: false, error: error instanceof Error ? error.message : "Telegram reply failed" },
+            { status: 502 },
+          );
+        }
+        return Response.json({ ok: true });
+      },
+    },
+  },
+});

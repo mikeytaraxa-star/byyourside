@@ -14,7 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      care_circles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          telegram_chat_id: number
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          telegram_chat_id: number
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          telegram_chat_id?: number
+        }
+        Relationships: []
+      }
+      people: {
+        Row: {
+          circle_id: string
+          created_at: string
+          id: string
+          name: string
+          note: string
+          relation: string
+        }
+        Insert: {
+          circle_id: string
+          created_at?: string
+          id?: string
+          name: string
+          note?: string
+          relation: string
+        }
+        Update: {
+          circle_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          note?: string
+          relation?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "care_circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reminders: {
+        Row: {
+          circle_id: string
+          confirmed_at: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          local_time: string
+          status: string
+          title: string
+        }
+        Insert: {
+          circle_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          local_time: string
+          status?: string
+          title: string
+        }
+        Update: {
+          circle_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          local_time?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "care_circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_updates: {
+        Row: {
+          chat_id: number
+          created_at: string
+          raw_update: Json
+          telegram_user_id: number | null
+          text: string | null
+          update_id: number
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          raw_update: Json
+          telegram_user_id?: number | null
+          text?: string | null
+          update_id: number
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          raw_update?: Json
+          telegram_user_id?: number | null
+          text?: string | null
+          update_id?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

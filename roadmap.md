@@ -1,8 +1,10 @@
 # ByYourSide live integrations
 
-- [ ] Connect Telegram for two-way family messages and confirmations.
-- [ ] Add persistent storage for reminders, people, messages, and sensor events.
-- [ ] Connect Cocoon through its OpenAI-compatible client service, with an explicit unavailable state until configured.
-- [ ] Add phone location and motion sensing with user permission.
-- [ ] Add a secure G2 companion bridge for real glasses location/IMU events.
-- [ ] Verify the browser flows and automated tests; identify anything requiring physical G2 hardware.
+- [ ] Link the Telegram bot — blocked until the user completes the Telegram connection card; the verified webhook is ready.
+- [x] Add private persistent storage for reminders, people, and Telegram updates.
+- [x] Add a secure Cocoon OpenAI-compatible adapter with server-only credentials and no repository keys.
+- [ ] Supply a Cocoon client URL and API key — blocked because no Cocoon access is available yet.
+- [x] Add a clearly labeled Cocoon demo showing a question and sample glasses answer.
+- [x] Add official G2 tap, phone-location, and head-motion APIs through the Even Hub SDK.
+- [x] Add a no-hardware location and motion showcase with explicit simulation labels.
+- [x] Verify command, AI, sensor, routing, type, and browser flows; physical G2 verification is not required for this hackathon demo.
