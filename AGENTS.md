@@ -38,3 +38,6 @@ use the editor.
 - Decode G2/R1 gestures in a browser-safe pure module and route them through one showcase handler so native and simulated controls have identical behavior.
 - Voice captures consent-gated local device/G2 audio, discards it without uploads, and uses explicitly selected sample questions for grounded demo answers; this keeps showcase microphone input separate from unimplemented speech recognition.
 - Serialize native glasses display writes through a latest-value queue and discard pending writes on disconnect so slow device responses cannot restore stale templates.
+- Keep the hardware companion in a shared G2App used by /g2 and the standalone Even Hub entry; package only browser-safe code so the installed app needs no hosted website or bundled credentials.
+- Store the hardware schedule through Even App local storage, with browser storage as a preview fallback; reset completion on local calendar rollover without claiming family synchronization.
+- Native G2 display regions and text limits live in g2-display.ts; validate SDK containers and keep the clock aligned with the reminder heading and the action in its own bottom region.

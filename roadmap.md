@@ -1,5 +1,10 @@
 # ByYourSide live integrations
 
+- [x] Build a dedicated native G2 app with device-only connection, local reminders, shared gesture handling, and safe lifecycle cleanup.
+- [x] Produce and validate an official Even Hub installation package and hardware setup instructions.
+- [x] Verify native bridge flows with an instrumented bridge and phone/desktop-sized browser, including the offline package entry.
+- [ ] Register/install the beta build and verify physical G2/R1 — blocked by unavailable hardware and the user's Even Hub account; local developer QR instructions are included.
+
 - [x] Connect tap, double-tap, swipes, hold/release, R1 source events, and contextual menu actions to the showcase.
 - [x] Keep real local microphone capture with explicit permission; use selected Cocoon demo questions instead of external speech transcription.
 - [x] Verify Cocoon-only demo questions, discarded audio, and no other AI service calls; physical G2/R1 checks remain unavailable without devices.

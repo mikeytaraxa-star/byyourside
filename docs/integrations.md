@@ -24,6 +24,8 @@ Without configuration, `/ask` returns an explicitly labeled demo answer. Cocoon 
 
 ## Even Realities G2
 
+The dedicated hardware companion is now at `/g2`; download its standalone `.ehpk` and setup guide from the showcase header. See `docs/g2-hardware.md` for installation, developer-mode LAN testing, native controls, and current limitations. It uses local schedules rather than the showcase's simulated clock or Telegram messages.
+
 The installed `@evenrealities/even_hub_sdk` integration uses the official methods:
 
 - `createStartUpPageContainer` and `textContainerUpgrade` for the clock and reminder display.

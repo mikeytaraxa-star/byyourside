@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Glasses3D, GlassesFilm, Hud, ThroughView } from "@/components/demo/Glasses";
 import { IntegrationPanel } from "@/components/demo/IntegrationPanel";
@@ -222,6 +222,11 @@ function Index() {
           on their glasses, taps once, and the family knows it's done. Questions are answered by a
           private AI running on Cocoon.
         </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Button asChild variant="outline"><Link to="/g2">Open G2 app</Link></Button>
+          <Button asChild variant="ghost"><a href="/downloads/byyourside-g2.ehpk" download>Download G2 package</a></Button>
+          <Button asChild variant="ghost"><a href="/downloads/g2-setup.md" download>G2 installation guide</a></Button>
+        </div>
       </header>
 
       <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-10 lg:grid-cols-[380px_1fr]">

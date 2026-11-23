@@ -6,6 +6,8 @@ import type { EvenHubController } from "./use-even-hub";
 function controller(): EvenHubController {
   return {
     status: "connected", message: "", location: null, motion: null,
+    sensorsActive: false, setSensors: vi.fn(async () => {}),
+    readStorage: vi.fn(async () => ''), writeStorage: vi.fn(async () => true),
     connect: vi.fn(async () => true), simulate: vi.fn(), stop: vi.fn(),
     startAudio: vi.fn(async (callback) => { callback(new Uint8Array(200)); }),
     stopAudio: vi.fn(async () => {}),

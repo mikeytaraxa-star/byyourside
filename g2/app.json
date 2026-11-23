@@ -1,0 +1,13 @@
+{
+  "package_id": "app.byyourside.g2",
+  "edition": "202601",
+  "name": "ByYourSide",
+  "version": "0.1.0",
+  "min_sdk_version": "0.0.16",
+  "entrypoint": "index.html",
+  "permissions": [
+    { "name": "location", "desc": "Show phone location locally when the caregiver enables location and motion." },
+    { "name": "g2-microphone", "desc": "Test G2 microphone locally with explicit consent; audio is discarded without uploads or transcription." }
+  ],
+  "supported_languages": ["en"]
+}
