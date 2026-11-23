@@ -65,7 +65,7 @@ function Index() {
     ? { title: override.title, body: override.body, footer: "tap to close" }
     : active
       ? { title: `${active.time} · REMINDER`, body: `${active.text}${active.detail ? ` — ${active.detail}` : ""}`, footer: "◉ tap  =  Done", alert: true }
-      : { title: fmt(now), body: next ? `All good ☺  Next: ${next.text} ${next.time}` : "All good ☺  Nothing planned", footer: "ring: ask a question" };
+      : { title: "TODAY", body: next ? `All good ☺  Next: ${next.text} ${next.time}` : "All good ☺  Nothing planned", footer: "ring: ask a question" };
 
   const send = (text: string) => {
     if (!text.trim()) return;
@@ -145,7 +145,7 @@ function Index() {
           </div>
           <div className="h-[420px] rounded-3xl border border-border bg-card">
             <div className="relative h-full w-full overflow-hidden rounded-3xl">
-              <div className={`absolute inset-0 transition-all duration-700 ease-out ${view === "pov" ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-[1.03] [&_*]:!pointer-events-none"}`}><ThroughView onFullscreen={() => setFilm(true)}>{screen}</ThroughView></div>
+              <div className={`absolute inset-0 transition-all duration-700 ease-out ${view === "pov" ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-[1.03] [&_*]:!pointer-events-none"}`}><ThroughView clock={fmt(now)} onFullscreen={() => setFilm(true)}>{screen}</ThroughView></div>
               <div className={`absolute inset-0 transition-all duration-700 ease-out ${view === "3d" ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-[0.97] [&_*]:!pointer-events-none"}`}>{seen3d && <Glasses3D>{screen}</Glasses3D>}</div>
             </div>
           </div>
@@ -182,7 +182,7 @@ function Index() {
           <div key={t} className="rounded-2xl border border-border bg-card p-5"><h3 className="font-display text-xl font-bold">{t}</h3><p className="mt-2 text-sm text-muted-foreground">{d}</p></div>
         ))}
       </section>
-      {film && <GlassesFilm hud={screen} onClose={closeFilm} />}
+      {film && <GlassesFilm clock={fmt(now)} hud={screen} onClose={closeFilm} />}
     </main>
   );
 }
