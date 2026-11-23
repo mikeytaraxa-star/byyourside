@@ -68,9 +68,9 @@
   --color-tg: var(--tg);
   --color-tg-bubble: var(--tg-bubble);
   --color-tg-bg: var(--tg-bg);
-  --font-display: "Fraunces", Georgia, serif;
+  --font-display: "DM Sans", system-ui, sans-serif;
   --font-sans: "DM Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-mono: "DM Sans", system-ui, sans-serif;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -121,15 +121,15 @@
   }
 }
 
-.hud-glow { text-shadow: 0 0 8px color-mix(in oklab, var(--hud) 70%, transparent); }
+.hud-glow { text-shadow: 0 1px 2px oklch(0.15 0.02 50 / 0.8), 0 0 10px color-mix(in oklab, var(--hud) 45%, transparent); }
 @keyframes hud-in { from { opacity: 0; transform: translateY(6px); filter: blur(3px);} to {opacity:1; transform:none; filter:none;} }
 .hud-in { animation: hud-in .5s ease-out both; }
 
-@keyframes glasses-on { 0% { transform: translateY(-120%) scale(1.4); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; opacity: 1; } }
-@keyframes glasses-off { from { transform: none; opacity: 1; } to { transform: translateY(-120%) scale(1.4); opacity: 0; } }
+@keyframes glasses-on { 0% { transform: perspective(1200px) translateY(55%) rotateX(38deg) scale(0.55); opacity: 0; } 35% { opacity: 1; } 100% { transform: perspective(1200px) translateY(0) rotateX(0deg) scale(1); opacity: 1; } }
+@keyframes glasses-off { 0% { transform: perspective(1200px) translateY(0) rotateX(0deg) scale(1); opacity: 1; } 65% { opacity: 1; } 100% { transform: perspective(1200px) translateY(55%) rotateX(38deg) scale(0.55); opacity: 0; } }
 @keyframes lens-clear { from { backdrop-filter: blur(18px); background: color-mix(in oklab, var(--background) 70%, transparent);} to { backdrop-filter: blur(0); background: transparent; } }
 @keyframes lens-fog { from { backdrop-filter: blur(0); background: transparent;} to { backdrop-filter: blur(18px); background: var(--background); } }
-.glasses-on { animation: glasses-on 1.6s cubic-bezier(.2,.8,.2,1) both; }
-.glasses-off { animation: glasses-off 1.4s cubic-bezier(.6,0,.8,.2) both; }
+.glasses-on { animation: glasses-on 1.6s cubic-bezier(.22,.9,.3,1) both; transform-origin: 50% 100%; }
+.glasses-off { animation: glasses-off 1.4s cubic-bezier(.6,0,.75,.3) both; transform-origin: 50% 100%; }
 .lens-clear { animation: lens-clear 1.8s ease-out both; }
 .lens-fog { animation: lens-fog 1.4s ease-in both; }

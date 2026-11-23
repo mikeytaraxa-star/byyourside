@@ -44,19 +44,21 @@ export function GlassesFilm({ hud, onClose }: { hud: ReactNode; onClose: () => v
   return (
     <div ref={ref} className="fixed inset-0 z-50 overflow-hidden bg-background">
       <video ref={vid} src={dailyLife.url} playsInline onEnded={finish} className="absolute inset-0 h-full w-full object-cover" />
-      <div className={`absolute inset-0 ${phase === "off" ? "lens-fog" : "lens-clear"}`} />
       <div className={`pointer-events-none absolute inset-0 ${phase === "off" ? "glasses-off" : "glasses-on"}`}>
         <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" className="h-full w-full text-frame">
           <defs><mask id="lenses"><rect width="1600" height="900" fill="white" /><path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="black" /><path d="M820,430 C820,250 950,175 1150,175 C1340,175 1480,215 1480,400 C1480,610 1330,730 1150,730 C960,730 820,610 820,430 Z" fill="black" /></mask></defs>
-          <rect width="1600" height="900" fill="currentColor" opacity="0.94" mask="url(#lenses)" />
           <path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="none" stroke="currentColor" strokeWidth="38" />
           <path d="M820,430 C820,250 950,175 1150,175 C1340,175 1480,215 1480,400 C1480,610 1330,730 1150,730 C960,730 820,610 820,430 Z" fill="none" stroke="currentColor" strokeWidth="38" />
           <path d="M760,300 Q800,250 840,300" fill="none" stroke="currentColor" strokeWidth="34" />
           <rect x="1440" y="250" width="160" height="70" rx="18" fill="currentColor" />
           <rect x="0" y="250" width="160" height="70" rx="18" fill="currentColor" />
+          {phase === "play" && (
+            <foreignObject x="985" y="245" width="350" height="175" className="[&_*]:!text-[15px] [&_.text-base]:!text-[26px]">
+              <div className="h-full w-full">{hud}</div>
+            </foreignObject>
+          )}
         </svg>
       </div>
-      {phase === "play" && <div className="hud-in absolute right-[12%] top-[24%] w-[min(24vw,340px)]">{hud}</div>}
       <button onClick={finish} className="absolute right-6 top-6 rounded-full bg-background/60 px-4 py-2 text-sm text-foreground backdrop-blur">Take glasses off ✕</button>
     </div>
   );
@@ -65,8 +67,8 @@ export function GlassesFilm({ hud, onClose }: { hud: ReactNode; onClose: () => v
 /** The 576x288 G2 display, rendered in green monochrome. */
 export function Hud({ title, body, footer, alert }: { title: string; body: string; footer?: string; alert?: boolean }) {
   return (
-    <div key={title + body} className="hud-in hud-glow flex aspect-[2/1] w-full flex-col justify-between rounded-xl bg-background/25 p-3 font-mono text-hud backdrop-blur-[2px]">
-      <div className="flex justify-between text-[10px] opacity-80"><span>{alert ? "⚠ " : ""}{title}</span><span>BYYOURSIDE</span></div>
+    <div key={title + body} className="hud-in hud-glow flex aspect-[2/1] w-full flex-col justify-between rounded-xl p-2 text-hud">
+      <div className="flex justify-between text-[10px] opacity-80"><span>{alert ? "⚠ " : ""}{title}</span><span /></div>
       <div className="text-center text-base font-bold leading-snug sm:text-lg">{body}</div>
       <div className="text-center text-[10px] opacity-80">{footer}</div>
     </div>

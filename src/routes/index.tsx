@@ -99,7 +99,7 @@ function Index() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="mx-auto flex max-w-7xl flex-col items-center px-5 pb-6 pt-10 text-center">
-        <img src={logo.url} alt="ByYourSide logo" className="mb-4 h-24 w-24" />
+        <Logo3D src={logo.url} />
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">ByYourSide · Even Realities G2 · Telegram · TON Cocoon</p>
         <h1 className="mt-3 max-w-4xl font-display text-4xl font-bold leading-[1.05] sm:text-6xl">
           Family remembers <span className="text-primary">for</span> Your Loved One — right in front of their eyes.
@@ -192,5 +192,20 @@ function Ctl({ label, sub, onClick, primary }: { label: string; sub: string; onC
     <button onClick={onClick} className={`rounded-2xl border px-4 py-3 text-left transition hover:-translate-y-0.5 ${primary ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary"}`}>
       <div className="font-semibold">{label}</div><div className="text-xs opacity-70">{sub}</div>
     </button>
+  );
+}
+
+function Logo3D({ src }: { src: string }) {
+  const [r, setR] = useState({ x: 0, y: 0 });
+  useEffect(() => {
+    const move = (e: PointerEvent) => setR({ x: (e.clientY / window.innerHeight - 0.5) * -40, y: (e.clientX / window.innerWidth - 0.5) * 50 });
+    window.addEventListener("pointermove", move);
+    return () => window.removeEventListener("pointermove", move);
+  }, []);
+  return (
+    <div className="mb-4 [perspective:600px]">
+      <img src={src} alt="ByYourSide logo" className="h-24 w-24 transition-transform duration-300 ease-out drop-shadow-[0_14px_18px_oklch(0.1_0.02_50/0.6)]"
+        style={{ transform: `rotateX(${r.x}deg) rotateY(${r.y}deg)` }} />
+    </div>
   );
 }
