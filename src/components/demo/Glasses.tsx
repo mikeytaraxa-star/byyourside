@@ -54,10 +54,11 @@ export function GlassesFilm({ clock, onClose }: { clock?: string; onClose: () =>
       setPhase("on");
       playTimer = setTimeout(() => { setPhase("play"); vid.current?.play().catch(() => {}); }, 1600);
     });
-    const exit = () => { if (!document.fullscreenElement && !finishing.current) onClose(); };
+    const exit = () => { if (!document.fullscreenElement) finishRef.current(); };
     document.addEventListener("fullscreenchange", exit);
     return () => { cancelled = true; if (playTimer) clearTimeout(playTimer); if (closeTimer.current) clearTimeout(closeTimer.current); document.removeEventListener("fullscreenchange", exit); };
   }, [onClose]);
+  const finishRef = useRef<() => void>(() => {});
   const finish = () => {
     if (finishing.current) return;
     finishing.current = true;
@@ -65,6 +66,7 @@ export function GlassesFilm({ clock, onClose }: { clock?: string; onClose: () =>
     setPhase("off");
     closeTimer.current = setTimeout(() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); onClose(); }, 1500);
   };
+  finishRef.current = finish;
   return (
     <div ref={ref} className={`fixed inset-0 z-50 overflow-hidden bg-background ${phase === "off" ? "film-out" : phase === "wait" ? "opacity-0" : "film-in"}`}>
       <video ref={vid} src={dailyLife.url} preload="auto" playsInline muted onTimeUpdate={syncScene} onSeeked={syncScene} onLoadedMetadata={syncScene} onEnded={finish} className="absolute inset-0 h-full w-full object-cover" />
