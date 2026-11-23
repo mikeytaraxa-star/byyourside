@@ -48,7 +48,7 @@ export function GlassesFilm({ hud, clock, onClose }: { hud: ReactNode; clock?: s
       <div className={`pointer-events-none absolute inset-0 ${phase === "off" ? "eyes-close" : "eyes-open"}`} />
       <div className={`pointer-events-none absolute inset-0 ${phase === "off" ? "glasses-off" : "glasses-on"}`}>
         <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" className="h-full w-full text-frame">
-          <defs><mask id="lenses"><rect width="1600" height="900" fill="white" /><path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="black" /><path d="M820,430 C820,250 950,175 1150,175 C1340,175 1480,215 1480,400 C1480,610 1330,730 1150,730 C960,730 820,610 820,430 Z" fill="black" /></mask></defs>
+          <defs><mask id="lenses"><rect width="1600" height="900" fill="white" /><path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="black" /><path d="M820,430 C820,250 950,175 1150,175 C1340,175 1480,215 1480,400 C1480,610 1330,730 1150,730 C960,730 820,610 820,430 Z" fill="black" /></mask><clipPath id="right-lens"><path d="M840,430 C840,262 960,195 1150,195 C1330,195 1460,232 1460,400 C1460,598 1320,710 1150,710 C970,710 840,598 840,430 Z" /></clipPath></defs>
           <path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="none" stroke="currentColor" strokeWidth="38" />
           <path d="M820,430 C820,250 950,175 1150,175 C1340,175 1480,215 1480,400 C1480,610 1330,730 1150,730 C960,730 820,610 820,430 Z" fill="none" stroke="currentColor" strokeWidth="38" />
           <path d="M760,300 Q800,250 840,300" fill="none" stroke="currentColor" strokeWidth="34" />
@@ -58,8 +58,8 @@ export function GlassesFilm({ hud, clock, onClose }: { hud: ReactNode; clock?: s
             <text x="215" y="262" className="hud-glow fill-hud font-mono" fontSize="22" fontWeight="600" letterSpacing="2">{clock}</text>
           )}
           {phase === "play" && (
-            <foreignObject x="985" y="245" width="350" height="175" className="[&_*]:!text-[15px] [&_.text-base]:!text-[26px]">
-              <div className="h-full w-full">{hud}</div>
+            <foreignObject clipPath="url(#right-lens)" x="985" y="245" width="350" height="175" className="[&_*]:!text-[15px] [&_.text-base]:!text-[26px]">
+              <div className="h-full w-full overflow-hidden">{hud}</div>
             </foreignObject>
           )}
         </svg>
