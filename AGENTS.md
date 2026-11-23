@@ -35,3 +35,5 @@ use the editor.
 - Telegram updates enter through the verified TanStack webhook and use service-only care tables; do not add anonymous reads of family data.
 - Cocoon calls stay behind the server-only OpenAI-compatible adapter; credentials come from runtime configuration, never source or browser code.
 - G2 hardware APIs stay behind the dynamic SDK import in use-even-hub.ts; normal browsers use explicitly labeled simulations.
+- Decode G2/R1 gestures in a browser-safe pure module and route them through one showcase handler so native and simulated controls have identical behavior.
+- Voice uses consent-gated device/G2 recording and a bounded server-only Lovable AI transcription call; never store audio or pass care records to transcription, and label local answers separately from Cocoon.

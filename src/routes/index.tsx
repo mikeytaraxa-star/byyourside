@@ -3,9 +3,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Glasses3D, GlassesFilm, Hud, ThroughView } from "@/components/demo/Glasses";
 import { IntegrationPanel } from "@/components/demo/IntegrationPanel";
 import { useEvenHub } from "@/hooks/use-even-hub";
+import { useVoiceQuestion } from "@/hooks/use-voice-question";
+import { InteractionControls } from "@/components/demo/InteractionControls";
+import { browseIndex, type Gesture, type GestureSource } from "@/components/demo/gestures";
+import { Button } from "@/components/ui/button";
 import logo from "@/assets/byyourside_logo.png.asset.json";
 import {
   answer,
+  answerQuestion,
   fmt,
   parseCommand,
   toMin,
@@ -66,6 +71,10 @@ function Index() {
   const [input, setInput] = useState("");
   const [film, setFilm] = useState(false);
   const [seen3d, setSeen3d] = useState(false);
+  const [lastGesture, setLastGesture] = useState("");
+  const [voiceDisplay, setVoiceDisplay] = useState<{ title: string; body: string; footer: string } | null>(null);
+  const browseRef = useRef(-1);
+  const voiceRef = useRef<{ start: () => Promise<void>; stop: () => Promise<void> } | null>(null);
   useEffect(() => {
     if (view === "3d") setSeen3d(true);
   }, [view]);
@@ -99,7 +108,7 @@ function Index() {
     .filter((r) => r.status === "pending" && toMin(r.time) > now)
     .sort((a, b) => toMin(a.time) - toMin(b.time))[0];
 
-  const hud = override
+  const hud = voiceDisplay ?? (override
     ? { title: override.title, body: override.body, footer: "tap to close" }
     : active
       ? {
@@ -113,8 +122,8 @@ function Index() {
           body: next
             ? `All good ☺  Next: ${next.text} ${next.time}`
             : "All good ☺  Nothing planned",
-          footer: "ring: ask a question",
-        };
+          footer: "hold to ask a question",
+        });
 
   const send = (text: string) => {
     if (!text.trim()) return;
@@ -136,7 +145,7 @@ function Index() {
     setReminders((rs) => rs.map((x) => (x.id === active.id ? { ...x, status: "done" } : x)));
     setOverride({ title: "THANK YOU", body: "Done ✓  Anna knows." });
     bot(`💚 Your Loved One confirmed “${active.text}” at ${fmt(now)}.`);
-    setTimeout(() => setOverride(null), 2500);
+    setTimeout(() => setOverride((current) => current?.title === "THANK YOU" ? null : current), 2500);
   };
 
   const ask = (q: "who" | "today") => {
@@ -147,10 +156,42 @@ function Index() {
     });
   };
 
+  const askQuestion = (question: string) => {
+    browseRef.current = -1;
+    setOverride({ title: "ANSWER · DEMO", body: answerQuestion(question, people, reminders, now) });
+  };
+  const gesture = (action: Gesture, source: GestureSource, simulated = false) => {
+    setLastGesture(`${simulated ? "Simulated" : "Received"} · ${source} · ${action}`);
+    if (action === "hold") { void voiceRef.current?.start(); return; }
+    if (action === "release") { void voiceRef.current?.stop(); return; }
+    if (action === "menu-ask") {
+      if (voiceDisplay) void voiceRef.current?.stop(); else void voiceRef.current?.start();
+      return;
+    }
+    if (voiceDisplay) return;
+    if (action === "tap" || action === "menu-done") { browseRef.current = -1; tap(); return; }
+    if (action === "double-tap" || action === "menu-today") { browseRef.current = -1; setOverride(null); return; }
+    const sorted = [...reminders].sort((a, b) => toMin(a.time) - toMin(b.time));
+    const index = browseIndex(browseRef.current, action === "swipe-up" ? -1 : 1, sorted.length);
+    browseRef.current = index;
+    const reminder = sorted[index];
+    setOverride(reminder ? {
+      title: `${reminder.time} · ${index + 1}/${sorted.length}`,
+      body: `${reminder.text}${reminder.detail ? ` — ${reminder.detail}` : ""} · ${reminder.status}`,
+    } : { title: "TODAY", body: "Nothing planned. Take your time." });
+  };
+
   const g2 = useEvenHub({
     display: { clock: fmt(now), title: hud.title, body: hud.body, footer: hud.footer },
-    onTap: tap,
+    onGesture: (action, source) => gesture(action, source),
   });
+  const voice = useVoiceQuestion(g2, askQuestion);
+  voiceRef.current = voice;
+  useEffect(() => {
+    setVoiceDisplay(voice.status === "listening" ? { title: "LISTENING", body: "Take your time. I'm listening.", footer: "release to send" }
+      : voice.status === "transcribing" ? { title: "ONE MOMENT", body: "Reading your question…", footer: "" }
+      : voice.status === "requesting" ? { title: "MICROPHONE", body: "Opening the microphone…", footer: "" } : null);
+  }, [voice.status]);
   const screen = <Hud {...hud} />;
   const closeFilm = useCallback(() => setFilm(false), []);
 
@@ -269,13 +310,13 @@ function Index() {
           </div>
           <div className="grid gap-3 sm:grid-cols-4">
             <Ctl
-              onClick={tap}
+              onClick={() => gesture("tap", "Right temple", true)}
               label="Tap temple"
               sub={active ? "Confirm reminder" : "Close"}
               primary
             />
-            <Ctl onClick={() => ask("who")} label="“Who is this?”" sub="Voice question" />
-            <Ctl onClick={() => ask("today")} label="“What's next?”" sub="Voice question" />
+            <Ctl onClick={() => { void voice.start(); }} label="Ask a question" sub="Real microphone" />
+            <Ctl onClick={() => askQuestion("What's next?")} label="“What's next?”" sub="Sample question · demo" />
             <Ctl
               onClick={() => {
                 setOverride(null);
@@ -285,6 +326,8 @@ function Index() {
               sub="Fast-forward time"
             />
           </div>
+          <InteractionControls voice={voice} live={g2.status === "connected"} lastGesture={lastGesture}
+            onGesture={(action, source) => gesture(action, source, true)} onQuestion={askQuestion} />
           <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2">
             <div>
               <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
@@ -383,13 +426,14 @@ function Ctl({
   primary?: boolean;
 }) {
   return (
-    <button
+    <Button
       onClick={onClick}
-      className={`rounded-2xl border px-4 py-3 text-left transition hover:-translate-y-0.5 ${primary ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary"}`}
+      variant={primary ? "default" : "outline"}
+      className="h-auto min-w-0 flex-col items-start whitespace-normal rounded-2xl px-4 py-3 text-left"
     >
       <div className="font-semibold">{label}</div>
       <div className="text-xs opacity-70">{sub}</div>
-    </button>
+    </Button>
   );
 }
 

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppLocation, EvenAppBridge } from "@evenrealities/even_hub_sdk";
+import { decodeGesture, G2_MENU, type Gesture, type GestureSource } from "@/components/demo/gestures";
 
 export type G2Status = "idle" | "connecting" | "connected" | "simulated" | "error";
 export type MotionSample = { x: number; y: number; z: number };
 export type G2Display = { clock: string; title: string; body: string; footer?: string | undefined };
 
-export function useEvenHub({ display, onTap }: { display: G2Display; onTap: () => void }) {
+export function useEvenHub({ display, onGesture }: { display: G2Display; onGesture: (gesture: Gesture, source: GestureSource) => void }) {
   const [status, setStatus] = useState<G2Status>("idle");
   const [message, setMessage] = useState(
     "No glasses connected — the full showcase works without them.",
@@ -15,18 +16,20 @@ export function useEvenHub({ display, onTap }: { display: G2Display; onTap: () =
   const bridgeRef = useRef<EvenAppBridge | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const displayRef = useRef(display);
-  const onTapRef = useRef(onTap);
+  const onGestureRef = useRef(onGesture);
+  const audioRef = useRef<((chunk: Uint8Array) => void) | null>(null);
 
   useEffect(() => {
     displayRef.current = display;
   }, [display]);
   useEffect(() => {
-    onTapRef.current = onTap;
-  }, [onTap]);
+    onGestureRef.current = onGesture;
+  }, [onGesture]);
 
   const stop = useCallback(() => {
     cleanupRef.current?.();
     cleanupRef.current = null;
+    audioRef.current = null;
     bridgeRef.current = null;
     setStatus("idle");
     setLocation(null);
@@ -78,6 +81,7 @@ export function useEvenHub({ display, onTap }: { display: G2Display; onTap: () =
       const result = await bridge.createStartUpPageContainer(
         new sdk.CreateStartUpPageContainer({
           containerTotalNum: 2,
+          menuObject: new sdk.MenuContainerProperty({ menuItems: G2_MENU.map((item) => new sdk.MenuItemProperty(item)) }),
           textObject: [
             new sdk.TextContainerProperty({
               containerID: 1,
@@ -108,13 +112,15 @@ export function useEvenHub({ display, onTap }: { display: G2Display; onTap: () =
         throw new Error(`G2 page creation failed (${result})`);
 
       const unsubscribeEvents = bridge.onEvenHubEvent((event) => {
-        const eventType =
-          event.textEvent?.eventType ?? event.listEvent?.eventType ?? event.sysEvent?.eventType;
-        if (
-          eventType === sdk.OsEventTypeList.CLICK_EVENT ||
-          (eventType === undefined && (event.textEvent || event.listEvent))
-        ) {
-          onTapRef.current();
+        const input = decodeGesture(event);
+        if (input) onGestureRef.current(input.gesture, input.source);
+        if (event.audioEvent?.source === sdk.AudioInputSource.Glasses)
+          audioRef.current?.(event.audioEvent.audioPcm);
+        if (event.sysEvent?.eventType === sdk.OsEventTypeList.FOREGROUND_EXIT_EVENT ||
+            event.sysEvent?.eventType === sdk.OsEventTypeList.SYSTEM_EXIT_EVENT ||
+            event.sysEvent?.eventType === sdk.OsEventTypeList.ABNORMAL_EXIT_EVENT) {
+          onGestureRef.current("release", "G2 input");
+          stop();
         }
         if (
           event.sysEvent?.eventType === sdk.OsEventTypeList.IMU_DATA_REPORT &&
@@ -131,13 +137,15 @@ export function useEvenHub({ display, onTap }: { display: G2Display; onTap: () =
       cleanupRef.current = () => {
         unsubscribeEvents();
         unsubscribeLocation();
+        audioRef.current = null;
+        void bridge.audioControl(false);
         void bridge.imuControl(false);
         void bridge.stopAppLocationUpdates();
         void bridge.shutDownPageContainer();
       };
 
       setStatus("connected");
-      setMessage("G2 live — tap either temple to confirm; location and head motion are streaming.");
+      setMessage("G2 connected · temple and paired R1 input enabled · contextual menu ready.");
       await bridge.imuControl(true, sdk.ImuReportPace.P500);
       await bridge.startAppLocationUpdates({
         accuracy: sdk.AppLocationAccuracy.Medium,
@@ -153,6 +161,7 @@ export function useEvenHub({ display, onTap }: { display: G2Display; onTap: () =
     } catch (error) {
       cleanupRef.current?.();
       cleanupRef.current = null;
+      if (bridgeRef.current) void bridgeRef.current.shutDownPageContainer();
       bridgeRef.current = null;
       setStatus("error");
       setMessage(
@@ -162,10 +171,26 @@ export function useEvenHub({ display, onTap }: { display: G2Display; onTap: () =
       );
       return false;
     }
+  }, [stop]);
+
+  const startAudio = useCallback(async (onChunk: (chunk: Uint8Array) => void) => {
+    const bridge = bridgeRef.current;
+    if (!bridge) throw new Error("Connect G2 inside Even App before using its microphone.");
+    const sdk = await import("@evenrealities/even_hub_sdk");
+    audioRef.current = onChunk;
+    if (!await bridge.audioControl(true, sdk.AudioInputSource.Glasses)) {
+      audioRef.current = null;
+      throw new Error("G2 microphone permission was not granted.");
+    }
+  }, []);
+  const stopAudio = useCallback(async () => {
+    audioRef.current = null;
+    if (bridgeRef.current) await bridgeRef.current.audioControl(false);
   }, []);
 
   const simulate = useCallback(() => {
     cleanupRef.current?.();
+    bridgeRef.current = null;
     setStatus("simulated");
     setMessage("Showcase simulation — no location or motion data leaves this browser.");
     setLocation({ latitude: 52.52, longitude: 13.405, accuracy: 8 });
@@ -182,7 +207,7 @@ export function useEvenHub({ display, onTap }: { display: G2Display; onTap: () =
     cleanupRef.current = () => clearInterval(interval);
   }, []);
 
-  return { status, message, location, motion, connect, simulate, stop };
+  return { status, message, location, motion, connect, simulate, stop, startAudio, stopAudio };
 }
 
 export type EvenHubController = ReturnType<typeof useEvenHub>;

@@ -44,3 +44,16 @@ export function answer(q: "who" | "today" | "where", people: Person[], reminders
   }
   return "You're at home. Peter is nearby.";
 }
+
+/** Grounded showcase answers, not a live AI call or visual person identification. */
+export function answerQuestion(question: string, people: Person[], reminders: Reminder[], now: number) {
+  const lower = question.toLowerCase();
+  const person = people.find((p) => lower.includes(p.name.toLowerCase()));
+  if (person) return answer("who", people, reminders, now, person);
+  if (/\b(who|person|visitor)\b/.test(lower)) return "I can't identify someone through the glasses. Ask their name; I can tell you what your family shared about them.";
+  if (/\b(next|today|reminder|planned|schedule)\b/.test(lower)) {
+    const due = reminders.filter((r) => r.status === "pending" && toMin(r.time) <= now).sort((a, b) => toMin(a.time) - toMin(b.time))[0];
+    return due ? `${due.text} was planned for ${due.time}.${due.detail ? ` ${due.detail}.` : ""}` : answer("today", people, reminders, now);
+  }
+  return "I can help with today's reminders or someone your family has added. For anything else, please check with your loved ones.";
+}

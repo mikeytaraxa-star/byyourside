@@ -1,5 +1,9 @@
 # ByYourSide live integrations
 
+- [x] Connect tap, double-tap, swipes, hold/release, R1 source events, and contextual menu actions to the showcase.
+- [x] Add real microphone capture and speech transcription with explicit permission and recording states.
+- [x] Test gesture rules, mocked native input/audio, and real browser recording → transcription → displayed answer; physical G2/R1 checks remain unavailable without devices.
+
 - [ ] Link the Telegram bot — blocked until the user completes the Telegram connection card; the verified webhook is ready.
 - [x] Add private persistent storage for reminders, people, and Telegram updates.
 - [x] Add a secure Cocoon OpenAI-compatible adapter with server-only credentials and no repository keys.
