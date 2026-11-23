@@ -56,7 +56,7 @@ export function GlassesFilm({ hud, clock, onClose }: { hud: ReactNode; clock?: s
           <rect x="1440" y="250" width="160" height="70" rx="18" fill="currentColor" />
           <rect x="0" y="250" width="160" height="70" rx="18" fill="currentColor" />
           {phase === "play" && (
-            <text x="300" y="320" className="hud-glow fill-hud font-mono" fontSize="22" fontWeight="600" letterSpacing="2">{clock}</text>
+            <text x="293" y="264" dominantBaseline="central" className="hud-glow fill-hud font-mono" fontSize="22" fontWeight="600" letterSpacing="2">{clock}</text>
           )}
           {phase === "play" && (
             <foreignObject clipPath="url(#right-lens)" x="985" y="245" width="350" height="175" className="[&_*]:!text-[15px] [&_.text-base]:!text-[26px]">
