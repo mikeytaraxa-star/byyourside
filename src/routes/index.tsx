@@ -210,30 +210,34 @@ function Index() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="mx-auto flex max-w-7xl flex-col items-center px-5 pb-6 pt-10 text-center">
-        <Logo3D src={logo.url} />
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">BYYOURSIDE</p>
-        <h1 className="mt-3 max-w-4xl font-display text-4xl font-bold leading-[1.05] sm:text-6xl">
+      <header className="mx-auto max-w-7xl px-5 pb-5 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <div className="flex shrink-0 items-center gap-3">
+            <Logo3D src={logo.url} />
+            <p className="font-display text-sm font-bold text-primary">BYYOURSIDE</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm"><Link to="/g2">Open G2 app</Link></Button>
+            <Button asChild variant="ghost" size="sm"><a href="/downloads/byyourside-g2.ehpk" download>Download G2 package</a></Button>
+            <Button asChild variant="ghost" size="sm"><a href="/downloads/g2-setup.md" download>G2 installation guide</a></Button>
+          </div>
+        </div>
+        <h1 className="mt-4 max-w-4xl font-display text-3xl font-bold leading-tight sm:text-4xl">
           Family remembers <span className="text-primary">for</span> Your Loved One — right in front
           of their eyes.
         </h1>
-        <p className="mt-4 max-w-2xl text-muted-foreground">
+        <p className="mt-2 max-w-5xl text-sm leading-relaxed text-muted-foreground">
           Loved ones add reminders and faces in a Telegram chat. Your Loved One sees one calm line
           on their glasses, taps once, and the family knows it's done. Questions are answered by a
           private AI running on Cocoon.
         </p>
-        <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <Button asChild variant="outline"><Link to="/g2">Open G2 app</Link></Button>
-          <Button asChild variant="ghost"><a href="/downloads/byyourside-g2.ehpk" download>Download G2 package</a></Button>
-          <Button asChild variant="ghost"><a href="/downloads/g2-setup.md" download>G2 installation guide</a></Button>
-        </div>
       </header>
 
       <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-10 lg:grid-cols-[380px_1fr]">
         {/* Telegram */}
-        <div className="mx-auto w-[360px] self-start rounded-[3.2rem] bg-gradient-to-b from-muted-foreground/40 to-muted/60 p-[3px] shadow-[0_18px_40px_-18px_oklch(0.1_0.02_50/0.7)]">
+        <div className="mx-auto w-full max-w-[360px] self-start rounded-[3.2rem] bg-gradient-to-b from-muted-foreground/40 to-muted/60 p-[3px] shadow-[0_18px_40px_-18px_oklch(0.1_0.02_50/0.7)]">
           <div className="rounded-[3.05rem] bg-background p-[10px]">
-            <div className="relative flex h-[660px] flex-col overflow-hidden rounded-[2.5rem] bg-tg-bg">
+            <div className="relative flex h-[620px] flex-col overflow-hidden rounded-[2.5rem] bg-tg-bg lg:h-[clamp(480px,calc(100svh-270px),660px)]">
               <div className="flex items-center justify-between bg-tg px-7 pt-3 text-[11px] font-semibold text-primary-foreground">
                 <span>9:41</span>
                 <div className="h-6 w-24 rounded-full bg-background" />
@@ -467,11 +471,11 @@ function Logo3D({ src }: { src: string }) {
     return () => window.removeEventListener("pointermove", move);
   }, []);
   return (
-    <div className="mb-4 [perspective:600px]">
+    <div className="shrink-0 [perspective:600px]">
       <img
         src={src}
         alt="ByYourSide logo"
-        className="h-24 w-24 transition-transform duration-300 ease-out drop-shadow-[0_14px_18px_oklch(0.1_0.02_50/0.6)]"
+        className="h-10 w-10 object-contain transition-transform duration-300 ease-out motion-reduce:transition-none"
         style={{ transform: `rotateX(${r.x}deg) rotateY(${r.y}deg)` }}
       />
     </div>
