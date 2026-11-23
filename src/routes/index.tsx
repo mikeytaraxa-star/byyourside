@@ -217,7 +217,7 @@ function Index() {
   const closeFilm = useCallback(() => setFilm(false), []);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen text-foreground">
       <header className="mx-auto max-w-7xl px-5 pb-5 pt-4">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <div className="flex shrink-0 items-center gap-3">
