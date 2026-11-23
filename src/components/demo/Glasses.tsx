@@ -32,17 +32,31 @@ export function ThroughView({ children, clock, onFullscreen }: { children: React
 export function GlassesFilm({ clock, onClose }: { clock?: string; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const vid = useRef<HTMLVideoElement>(null);
-  const [phase, setPhase] = useState<"on" | "play" | "off">("on");
+  const [phase, setPhase] = useState<"wait" | "on" | "play" | "off">("wait");
   const [scene, setScene] = useState(() => filmSceneAt(0));
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finishing = useRef(false);
   const syncScene = () => setScene(filmSceneAt(vid.current?.currentTime ?? 0));
   useEffect(() => {
-    ref.current?.requestFullscreen?.().catch(() => {});
-    const t = setTimeout(() => { setPhase("play"); vid.current?.play().catch(() => {}); }, 1700);
-    const exit = () => { if (!document.fullscreenElement) onClose(); };
+    let cancelled = false;
+    let playTimer: ReturnType<typeof setTimeout> | undefined;
+    // Start the glasses-on animation only once fullscreen has settled and the first frame is decoded,
+    // so the resize and the video load never land mid-animation.
+    const fs = (ref.current?.requestFullscreen?.() ?? Promise.resolve()).catch(() => {});
+    const v = vid.current;
+    const loaded = new Promise<void>((res) => {
+      if (!v || v.readyState >= 2) return res();
+      v.addEventListener("loadeddata", () => res(), { once: true });
+      setTimeout(res, 2500);
+    });
+    Promise.all([fs, loaded]).then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).then(() => {
+      if (cancelled) return;
+      setPhase("on");
+      playTimer = setTimeout(() => { setPhase("play"); vid.current?.play().catch(() => {}); }, 1600);
+    });
+    const exit = () => { if (!document.fullscreenElement && !finishing.current) onClose(); };
     document.addEventListener("fullscreenchange", exit);
-    return () => { clearTimeout(t); if (closeTimer.current) clearTimeout(closeTimer.current); document.removeEventListener("fullscreenchange", exit); };
+    return () => { cancelled = true; if (playTimer) clearTimeout(playTimer); if (closeTimer.current) clearTimeout(closeTimer.current); document.removeEventListener("fullscreenchange", exit); };
   }, [onClose]);
   const finish = () => {
     if (finishing.current) return;
@@ -52,10 +66,10 @@ export function GlassesFilm({ clock, onClose }: { clock?: string; onClose: () =>
     closeTimer.current = setTimeout(() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); onClose(); }, 1500);
   };
   return (
-    <div ref={ref} className={`fixed inset-0 z-50 overflow-hidden ${phase === "off" ? "film-out" : "film-in"}`}>
-      <video ref={vid} src={dailyLife.url} playsInline muted onTimeUpdate={syncScene} onSeeked={syncScene} onLoadedMetadata={syncScene} onEnded={finish} className="absolute inset-0 h-full w-full object-cover" />
-      <div className={`pointer-events-none absolute inset-0 ${phase === "off" ? "eyes-close" : "eyes-open"}`} />
-      <div className={`pointer-events-none absolute inset-0 ${phase === "off" ? "glasses-off" : "glasses-on"}`}>
+    <div ref={ref} className={`fixed inset-0 z-50 overflow-hidden bg-background ${phase === "off" ? "film-out" : phase === "wait" ? "opacity-0" : "film-in"}`}>
+      <video ref={vid} src={dailyLife.url} preload="auto" playsInline muted onTimeUpdate={syncScene} onSeeked={syncScene} onLoadedMetadata={syncScene} onEnded={finish} className="absolute inset-0 h-full w-full object-cover" />
+      <div className={`pointer-events-none absolute inset-0 ${phase === "off" ? "eyes-close" : phase === "wait" ? "opacity-0" : "eyes-open"}`} />
+      <div className={`pointer-events-none absolute inset-0 [transform:translateZ(0)] ${phase === "off" ? "glasses-off" : phase === "wait" ? "opacity-0" : "glasses-on"}`}>
         <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" className="h-full w-full text-frame">
           <defs><mask id="lenses"><rect width="1600" height="900" fill="white" /><path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="black" /><path d="M820,430 C820,250 950,175 1150,175 C1340,175 1480,215 1480,400 C1480,610 1330,730 1150,730 C960,730 820,610 820,430 Z" fill="black" /></mask><clipPath id="right-lens"><path d="M840,430 C840,262 960,195 1150,195 C1330,195 1460,232 1460,400 C1460,598 1320,710 1150,710 C970,710 840,598 840,430 Z" /></clipPath></defs>
           <path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="none" stroke="currentColor" strokeWidth="38" />
