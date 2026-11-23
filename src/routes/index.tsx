@@ -241,6 +241,38 @@ function Index() {
         </p>
       </header>
 
+      <section className="mx-auto flex max-w-6xl flex-col gap-4 px-5 pb-8">
+          <div className="flex items-center justify-center">
+            <div className="inline-flex rounded-full border border-border p-1 text-sm">
+              {(["pov", "3d"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`rounded-full px-4 py-1.5 ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                >
+                  {v === "pov" ? "Through the glasses" : "3D glasses"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="h-[clamp(420px,64svh,680px)] rounded-3xl border border-border bg-card">
+            <div className="relative h-full w-full overflow-hidden rounded-3xl">
+              <div
+                className={`absolute inset-0 transition-all duration-700 ease-out ${view === "pov" ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-[1.03] [&_*]:!pointer-events-none"}`}
+              >
+                <ThroughView clock={fmt(now)} onFullscreen={() => setFilm(true)}>
+                  {screen}
+                </ThroughView>
+              </div>
+              <div
+                className={`absolute inset-0 transition-all duration-700 ease-out ${view === "3d" ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-[0.97] [&_*]:!pointer-events-none"}`}
+              >
+                {seen3d && <Glasses3D clock={fmt(now)}>{screen}</Glasses3D>}
+              </div>
+            </div>
+          </div>
+      </section>
+
       <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-10 lg:grid-cols-[380px_1fr]">
         {/* Telegram */}
         <div className="mx-auto w-full max-w-[360px] self-start rounded-[3.2rem] bg-gradient-to-b from-muted-foreground/40 to-muted/60 p-[3px] shadow-[0_18px_40px_-18px_oklch(0.1_0.02_50/0.7)]">
@@ -309,35 +341,6 @@ function Index() {
 
         {/* Glasses */}
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="inline-flex rounded-full border border-border p-1 text-sm">
-              {(["pov", "3d"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`rounded-full px-4 py-1.5 ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-                >
-                  {v === "pov" ? "Through the glasses" : "3D glasses"}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="h-[420px] rounded-3xl border border-border bg-card">
-            <div className="relative h-full w-full overflow-hidden rounded-3xl">
-              <div
-                className={`absolute inset-0 transition-all duration-700 ease-out ${view === "pov" ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-[1.03] [&_*]:!pointer-events-none"}`}
-              >
-                <ThroughView clock={fmt(now)} onFullscreen={() => setFilm(true)}>
-                  {screen}
-                </ThroughView>
-              </div>
-              <div
-                className={`absolute inset-0 transition-all duration-700 ease-out ${view === "3d" ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-[0.97] [&_*]:!pointer-events-none"}`}
-              >
-                {seen3d && <Glasses3D clock={fmt(now)}>{screen}</Glasses3D>}
-              </div>
-            </div>
-          </div>
           <div className="grid gap-3 sm:grid-cols-4">
             <Ctl
               onClick={() => gesture("tap", "Right temple", true)}
