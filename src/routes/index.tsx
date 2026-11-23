@@ -111,7 +111,7 @@ function Index() {
 
       <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-10 lg:grid-cols-[380px_1fr]">
         {/* Telegram */}
-        <div className="mx-auto w-[360px] rounded-[3.2rem] bg-gradient-to-b from-muted-foreground/40 to-muted/60 p-[3px] shadow-2xl">
+        <div className="mx-auto w-[360px] self-start rounded-[3.2rem] bg-gradient-to-b from-muted-foreground/40 to-muted/60 p-[3px] shadow-[0_18px_40px_-18px_oklch(0.1_0.02_50/0.7)]">
         <div className="rounded-[3.05rem] bg-background p-[10px]">
         <div className="relative flex h-[660px] flex-col overflow-hidden rounded-[2.5rem] bg-tg-bg">
           <div className="flex items-center justify-between bg-tg px-7 pt-3 text-[11px] font-semibold text-primary-foreground">
