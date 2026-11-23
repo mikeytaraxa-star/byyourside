@@ -30,7 +30,7 @@ export function parseCommand(input: string):
   if (p) {
     const [name, relation, note] = (p[1] ?? "").split("|").map((x) => x.trim());
     if (!name || !relation) return { kind: "error", reply: "⚠️ Use: /person Anna | daughter | visits on Sundays" };
-    return { kind: "person", person: { name, relation, note: note ?? "" }, reply: `👤 Saved ${name} (${relation}). Mom can now ask “Who is ${name}?”` };
+    return { kind: "person", person: { name, relation, note: note ?? "" }, reply: `👤 Saved ${name} (${relation}). Your Loved One can now ask “Who is ${name}?”` };
   }
   return { kind: "error", reply: "I understand:\n/remind 14:00 Blue pill — with water\n/person Anna | daughter | visits Sundays" };
 }

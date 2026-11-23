@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "ByYourSide — Telegram + smart glasses for dementia care" },
-      { name: "description", content: "Family sets reminders in Telegram; Mom sees them on Even G2 glasses and confirms with a tap. Private AI on TON Cocoon." },
+      { name: "description", content: "Family sets reminders in Telegram; Your Loved One sees them on Even G2 glasses and confirms with a tap. Private AI on TON Cocoon." },
       { property: "og:title", content: "ByYourSide — memory assistant on Even G2" },
       { property: "og:description", content: "Interactive demo: Telegram bot for family, glasses view for the patient." },
       { property: "og:type", content: "website" },
@@ -32,7 +32,7 @@ function Index() {
     { name: "Peter", relation: "son", note: "He drives you to the doctor." },
   ]);
   const [msgs, setMsgs] = useState<Msg[]>([
-    { id: id(), from: "bot", text: "👋 Hi Anna! I'm ByYourSide. I help Mom remember. Add reminders and people below." },
+    { id: id(), from: "bot", text: "👋 Hi Anna! I'm ByYourSide. I help Your Loved One remember. Add reminders and people below." },
   ]);
   const [override, setOverride] = useState<{ title: string; body: string } | null>(null);
   const [view, setView] = useState<"3d" | "pov">("pov");
@@ -48,7 +48,7 @@ function Index() {
     reminders.forEach((r) => {
       if (r.status === "pending" && now - toMin(r.time) >= 15) {
         setReminders((rs) => rs.map((x) => (x.id === r.id ? { ...x, status: "missed" } : x)));
-        bot(`🚨 Mom hasn't confirmed “${r.text}” (due ${r.time}). Maybe give her a call?`);
+        bot(`🚨 Your Loved One hasn't confirmed “${r.text}” (due ${r.time}). Maybe give them a call?`);
       }
     });
   }, [now, reminders]);
@@ -82,7 +82,7 @@ function Index() {
     if (!active) return;
     setReminders((rs) => rs.map((x) => (x.id === active.id ? { ...x, status: "done" } : x)));
     setOverride({ title: "THANK YOU", body: "Done ✓  Anna knows." });
-    bot(`💚 Mom confirmed “${active.text}” at ${fmt(now)}.`);
+    bot(`💚 Your Loved One confirmed “${active.text}” at ${fmt(now)}.`);
     setTimeout(() => setOverride(null), 2500);
   };
 
@@ -100,10 +100,10 @@ function Index() {
         <img src={logo.url} alt="ByYourSide logo" className="mb-4 h-24 w-24" />
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">ByYourSide · Even Realities G2 · Telegram · TON Cocoon</p>
         <h1 className="mt-3 max-w-4xl font-display text-4xl font-bold leading-[1.05] sm:text-6xl">
-          Family remembers <span className="text-primary">for</span> Mom — right in front of her eyes.
+          Family remembers <span className="text-primary">for</span> Your Loved One — right in front of their eyes.
         </h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">
-          Loved ones add reminders and faces in a Telegram chat. Mom sees one calm line on her glasses, taps once, and the family knows it's done. Questions are answered by a private AI running on Cocoon.
+          Loved ones add reminders and faces in a Telegram chat. Your Loved One sees one calm line on their glasses, taps once, and the family knows it's done. Questions are answered by a private AI running on Cocoon.
         </p>
       </header>
 
@@ -112,7 +112,7 @@ function Index() {
         <div className="flex h-[640px] flex-col overflow-hidden rounded-3xl border border-border bg-tg-bg shadow-2xl">
           <div className="flex items-center gap-3 bg-tg px-4 py-3 text-primary-foreground">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-background/20 font-bold">R</div>
-            <div><div className="font-semibold">ByYourSide Bot</div><div className="text-xs opacity-80">Family of Mom · 3 members</div></div>
+            <div><div className="font-semibold">ByYourSide Bot</div><div className="text-xs opacity-80">Family of Your Loved One · 3 members</div></div>
           </div>
           <div ref={chatRef} className="flex-1 space-y-2 overflow-y-auto p-3">
             {msgs.map((m) => (
@@ -161,7 +161,7 @@ function Index() {
               </ul>
             </div>
             <div>
-              <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">People Mom knows</h3>
+              <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">People Your Loved One knows</h3>
               <ul className="space-y-1 text-sm">{people.map((p) => <li key={p.name}><b>{p.name}</b> <span className="text-muted-foreground">· {p.relation}</span></li>)}</ul>
             </div>
           </div>
@@ -171,7 +171,7 @@ function Index() {
       <section className="mx-auto grid max-w-7xl gap-4 px-5 pb-16 sm:grid-cols-3">
         {[
           ["1 · Family writes", "Anyone in the family Telegram group adds reminders and people with a simple message."],
-          ["2 · Mom sees & taps", "One short line on the G2 display. A single tap on the glasses confirms it."],
+          ["2 · Your Loved One sees & taps", "One short line on the G2 display. A single tap on the glasses confirms it."],
           ["3 · Nobody worries", "Family gets “done” instantly — or an alert if a reminder is missed for 15 minutes."],
         ].map(([t, d]) => (
           <div key={t} className="rounded-2xl border border-border bg-card p-5"><h3 className="font-display text-xl font-bold">{t}</h3><p className="mt-2 text-sm text-muted-foreground">{d}</p></div>
