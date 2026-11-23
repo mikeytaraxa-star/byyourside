@@ -37,3 +37,4 @@ use the editor.
 - G2 hardware APIs stay behind the dynamic SDK import in use-even-hub.ts; normal browsers use explicitly labeled simulations.
 - Decode G2/R1 gestures in a browser-safe pure module and route them through one showcase handler so native and simulated controls have identical behavior.
 - Voice captures consent-gated local device/G2 audio, discards it without uploads, and uses explicitly selected sample questions for grounded demo answers; this keeps showcase microphone input separate from unimplemented speech recognition.
+- Serialize native glasses display writes through a latest-value queue and discard pending writes on disconnect so slow device responses cannot restore stale templates.

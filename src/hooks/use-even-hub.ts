@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppLocation, EvenAppBridge } from "@evenrealities/even_hub_sdk";
 import { decodeGesture, G2_MENU, type Gesture, type GestureSource } from "@/components/demo/gestures";
+import { latestUpdateQueue } from "@/lib/latest-update";
 
 export type G2Status = "idle" | "connecting" | "connected" | "simulated" | "error";
 export type MotionSample = { x: number; y: number; z: number };
@@ -18,6 +19,8 @@ export function useEvenHub({ display, onGesture }: { display: G2Display; onGestu
   const displayRef = useRef(display);
   const onGestureRef = useRef(onGesture);
   const audioRef = useRef<((chunk: Uint8Array) => void) | null>(null);
+  const updatesRef = useRef<ReturnType<typeof latestUpdateQueue<G2Display>> | null>(null);
+  const connectionRevision = useRef(0);
 
   useEffect(() => {
     displayRef.current = display;
@@ -27,6 +30,9 @@ export function useEvenHub({ display, onGesture }: { display: G2Display; onGestu
   }, [onGesture]);
 
   const stop = useCallback(() => {
+    connectionRevision.current += 1;
+    updatesRef.current?.stop();
+    updatesRef.current = null;
     cleanupRef.current?.();
     cleanupRef.current = null;
     audioRef.current = null;
@@ -37,34 +43,18 @@ export function useEvenHub({ display, onGesture }: { display: G2Display; onGestu
     setMessage("Sensor stream stopped.");
   }, []);
 
-  useEffect(() => () => cleanupRef.current?.(), []);
+  useEffect(() => () => { connectionRevision.current += 1; updatesRef.current?.stop(); cleanupRef.current?.(); }, []);
 
   useEffect(() => {
     const bridge = bridgeRef.current;
     if (status !== "connected" || !bridge) return;
-    const current = displayRef.current;
-    void import("@evenrealities/even_hub_sdk").then((sdk) => {
-      if (bridgeRef.current !== bridge) return;
-      void bridge.textContainerUpgrade(
-        new sdk.TextContainerUpgrade({
-          containerID: 1,
-          containerName: "bys-clock",
-          content: current.clock,
-          textColor: 4,
-        }),
-      );
-      void bridge.textContainerUpgrade(
-        new sdk.TextContainerUpgrade({
-          containerID: 2,
-          containerName: "bys-reminder",
-          content: `${current.title}\n${current.body}${current.footer ? `\n\n${current.footer}` : ""}`,
-          textColor: 4,
-        }),
-      );
-    });
+    updatesRef.current?.push(display);
   }, [display, status]);
 
   const connect = useCallback(async () => {
+    const revision = ++connectionRevision.current;
+    updatesRef.current?.stop();
+    updatesRef.current = null;
     cleanupRef.current?.();
     cleanupRef.current = null;
     setStatus("connecting");
@@ -77,6 +67,7 @@ export function useEvenHub({ display, onGesture }: { display: G2Display; onGestu
           setTimeout(() => reject(new Error("Even App was not found")), 6000),
         ),
       ]);
+      if (revision !== connectionRevision.current) return false;
       bridgeRef.current = bridge;
       const result = await bridge.createStartUpPageContainer(
         new sdk.CreateStartUpPageContainer({
@@ -108,8 +99,24 @@ export function useEvenHub({ display, onGesture }: { display: G2Display; onGestu
           ],
         }),
       );
+      if (revision !== connectionRevision.current) {
+        if (bridgeRef.current === bridge) bridgeRef.current = null;
+        await bridge.shutDownPageContainer();
+        return false;
+      }
       if (result !== sdk.StartUpPageCreateResult.success)
         throw new Error(`G2 page creation failed (${result})`);
+      updatesRef.current = latestUpdateQueue<G2Display>(async (current) => {
+        if (bridgeRef.current !== bridge) return;
+        await bridge.textContainerUpgrade(new sdk.TextContainerUpgrade({
+          containerID: 1, containerName: "bys-clock", content: current.clock, textColor: 4,
+        }));
+        if (bridgeRef.current !== bridge) return;
+        await bridge.textContainerUpgrade(new sdk.TextContainerUpgrade({
+          containerID: 2, containerName: "bys-reminder", textColor: 4,
+          content: `${current.title}\n${current.body}${current.footer ? `\n\n${current.footer}` : ""}`,
+        }));
+      }, () => setMessage("The glasses display could not update. Please reconnect G2."));
 
       const unsubscribeEvents = bridge.onEvenHubEvent((event) => {
         const input = decodeGesture(event);
@@ -147,18 +154,24 @@ export function useEvenHub({ display, onGesture }: { display: G2Display; onGestu
       setStatus("connected");
       setMessage("G2 connected · temple and paired R1 input enabled · contextual menu ready.");
       await bridge.imuControl(true, sdk.ImuReportPace.P500);
+      if (revision !== connectionRevision.current) return false;
       await bridge.startAppLocationUpdates({
         accuracy: sdk.AppLocationAccuracy.Medium,
         intervalMs: 5000,
         distanceFilter: 5,
       });
+      if (revision !== connectionRevision.current) return false;
       const currentLocation = await bridge.getAppLocation({
         accuracy: sdk.AppLocationAccuracy.High,
         timeoutMs: 5000,
       });
+      if (revision !== connectionRevision.current) return false;
       if (currentLocation) setLocation(currentLocation);
       return true;
     } catch (error) {
+      if (revision !== connectionRevision.current) return false;
+      updatesRef.current?.stop();
+      updatesRef.current = null;
       cleanupRef.current?.();
       cleanupRef.current = null;
       if (bridgeRef.current) void bridgeRef.current.shutDownPageContainer();
@@ -189,6 +202,9 @@ export function useEvenHub({ display, onGesture }: { display: G2Display; onGestu
   }, []);
 
   const simulate = useCallback(() => {
+    connectionRevision.current += 1;
+    updatesRef.current?.stop();
+    updatesRef.current = null;
     cleanupRef.current?.();
     bridgeRef.current = null;
     setStatus("simulated");

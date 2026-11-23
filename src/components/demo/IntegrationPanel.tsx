@@ -8,7 +8,7 @@ import {
   Play,
   ShieldCheck,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import type { EvenHubController } from "@/hooks/use-even-hub";
 
 export function IntegrationPanel({
@@ -24,6 +24,7 @@ export function IntegrationPanel({
 }) {
   const busy = g2.status === "connecting";
   const live = g2.status === "connected";
+  const sensorChoice = useRef(0);
   return (
     <section className="mx-auto max-w-7xl px-5 pb-16" aria-labelledby="integrations-title">
       <div className="rounded-3xl border border-border bg-card p-5 sm:p-7">
@@ -44,6 +45,7 @@ export function IntegrationPanel({
             <button
               type="button"
               onClick={() => {
+                sensorChoice.current += 1;
                 g2.simulate();
                 onSensorDemo();
               }}
@@ -55,8 +57,9 @@ export function IntegrationPanel({
               type="button"
               disabled={busy}
               onClick={() => {
+                const choice = ++sensorChoice.current;
                 void g2.connect().then((ok) => {
-                  if (ok) onSensorDemo(true);
+                  if (ok && choice === sensorChoice.current) onSensorDemo(true);
                 });
               }}
               className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-semibold transition hover:border-primary disabled:opacity-60"
