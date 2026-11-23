@@ -214,7 +214,7 @@ function Index() {
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <div className="flex shrink-0 items-center gap-3">
             <Logo3D src={logo.url} />
-            <p className="font-display text-sm font-bold text-primary">BYYOURSIDE</p>
+            <p className="font-display text-sm font-bold text-primary">ByYourSide</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm"><Link to="/g2">Open G2 app</Link></Button>
