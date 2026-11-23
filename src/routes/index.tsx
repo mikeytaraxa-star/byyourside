@@ -7,7 +7,7 @@ import { useVoiceQuestion } from "@/hooks/use-voice-question";
 import { InteractionControls } from "@/components/demo/InteractionControls";
 import { browseIndex, type Gesture, type GestureSource } from "@/components/demo/gestures";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/byyourside_logo.png.asset.json";
+import logo from "@/assets/byyourside_heart_hand_logo.svg.asset.json";
 import {
   answer,
   answerQuestion,
