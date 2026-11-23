@@ -8,6 +8,8 @@ import { InteractionControls } from "@/components/demo/InteractionControls";
 import { browseIndex, type Gesture, type GestureSource } from "@/components/demo/gestures";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/byyourside_heart_hand_logo.svg.asset.json";
+import shareImage from "@/assets/byyourside_share.png.asset.json";
+import { getRequestOrigin } from "@/lib/origin.functions";
 import {
   answer,
   answerQuestion,
@@ -20,7 +22,8 @@ import {
 } from "@/components/demo/engine";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
+  loader: async () => ({ origin: await getRequestOrigin() }),
+  head: ({ loaderData }) => ({
     meta: [
       { title: "ByYourSide — Telegram + smart glasses for dementia care" },
       {
@@ -35,6 +38,10 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      ...(loaderData ? [
+        { property: "og:image", content: `${loaderData.origin}${shareImage.url}` },
+        { name: "twitter:image", content: `${loaderData.origin}${shareImage.url}` },
+      ] : []),
     ],
   }),
   component: Index,
