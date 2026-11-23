@@ -61,7 +61,7 @@ export function InteractionControls({ voice, live, lastGesture, onGesture, onQue
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor="voice-demo-question" className="text-xs text-muted-foreground">Sample question</label>
           <select id="voice-demo-question" value={voice.demoQuestion} disabled={busy || recording}
-            onChange={(event) => voice.setDemoQuestion(event.target.value)} className="rounded-md border border-input bg-background px-2 py-1 text-sm">
+            onChange={(event) => { voice.setDemoQuestion(event.target.value); onQuestion(event.target.value); }} className="rounded-md border border-input bg-background px-2 py-1 text-sm">
             <option>What's next?</option><option>Who is Anna?</option><option>Who is Peter?</option>
           </select>
         </div>

@@ -35,18 +35,27 @@ export function useVoiceQuestion(g2: EvenHubController, onTranscript: (text: str
     update("error");
     setMessage(error instanceof Error ? error.message : "Microphone unavailable. You can type your question instead.");
   }, [cleanup, update]);
-  const preview = useCallback(async (audio: Blob, token: number) => {
+  const cancel = useCallback(() => {
+    generation.current += 1;
+    if (recorder.current?.state === "recording") recorder.current.stop();
+    if (native.current) void g2.stopAudio();
     cleanup();
+    update("idle");
+    setMessage("");
+    setTranscript("");
+  }, [cleanup, g2.stopAudio, update]);
+  const preview = useCallback(async (audio: Blob, token: number) => {
     if (token !== generation.current) return;
+    cleanup();
     update("previewing");
     try {
       if (audio.size < 100) throw new Error("No audio was recorded. Please try again.");
       // Never upload or transcribe audio: the selected question is explicit demo data.
       const question = selectedQuestion.current;
-      setTranscript(question);
-      setMessage("Cocoon AI demo · sample question, not speech recognition.");
       update("idle");
       callback.current(question);
+      setTranscript(question);
+      setMessage("Cocoon AI demo · sample question, not speech recognition.");
     } catch (error) { if (token === generation.current) fail(error); }
   }, [cleanup, fail, update]);
   const stop = useCallback(async () => {
@@ -58,11 +67,13 @@ export function useVoiceQuestion(g2: EvenHubController, onTranscript: (text: str
     if (state.current !== "listening") return;
     update("previewing");
     if (native.current) {
+      const token = generation.current;
       try {
         await g2.stopAudio();
+        if (token !== generation.current) return;
         const audio = pcmToWav(pcm.current);
-        await preview(audio, generation.current);
-      } catch (error) { fail(error); }
+        await preview(audio, token);
+      } catch (error) { if (token === generation.current) fail(error); }
     } else if (recorder.current?.state === "recording") recorder.current.stop();
   }, [cleanup, fail, g2.stopAudio, update, preview]);
   const start = useCallback(async () => {
@@ -107,5 +118,5 @@ export function useVoiceQuestion(g2: EvenHubController, onTranscript: (text: str
       generation.current += 1; cleanup(); update("error"); setMessage("G2 disconnected. Please reconnect or use this device's microphone.");
     }
   }, [g2.status, cleanup, update]);
-  return { status, consent, setConsent, message, transcript, demoQuestion, setDemoQuestion, start, stop };
+  return { status, consent, setConsent, message, transcript, demoQuestion, setDemoQuestion, start, stop, cancel };
 }

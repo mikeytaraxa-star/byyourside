@@ -39,4 +39,21 @@ describe("Cocoon-only voice showcase", () => {
     expect(result.current.status).toBe("idle");
     unmount();
   });
+  it("does not let a cancelled recording overwrite a newer template", async () => {
+    const g2 = controller();
+    let finishStop: (() => void) | undefined;
+    const pendingStop = new Promise<void>((resolve) => { finishStop = resolve; });
+    g2.stopAudio = vi.fn(() => pendingStop);
+    const onQuestion = vi.fn();
+    const { result, unmount } = renderHook(() => useVoiceQuestion(g2, onQuestion));
+    act(() => result.current.setConsent(true));
+    await act(async () => { await result.current.start(); });
+    let stopping: Promise<void> | undefined;
+    act(() => { stopping = result.current.stop(); });
+    act(() => { result.current.cancel(); result.current.setDemoQuestion("Who is Peter?"); });
+    await act(async () => { finishStop?.(); await stopping; });
+    expect(onQuestion).not.toHaveBeenCalled();
+    expect(result.current.status).toBe("idle");
+    unmount();
+  });
 });

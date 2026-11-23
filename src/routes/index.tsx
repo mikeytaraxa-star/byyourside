@@ -74,7 +74,18 @@ function Index() {
   const [lastGesture, setLastGesture] = useState("");
   const [voiceDisplay, setVoiceDisplay] = useState<{ title: string; body: string; footer: string } | null>(null);
   const browseRef = useRef(-1);
-  const voiceRef = useRef<{ start: () => Promise<void>; stop: () => Promise<void> } | null>(null);
+  const voiceRef = useRef<{ start: () => Promise<void>; stop: () => Promise<void>; cancel: () => void } | null>(null);
+  const confirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const replaceDisplay = (value: { title: string; body: string } | null) => {
+    if (confirmationTimer.current) clearTimeout(confirmationTimer.current);
+    confirmationTimer.current = null;
+    voiceRef.current?.cancel();
+    setVoiceDisplay(null);
+    setOverride(value);
+  };
+  useEffect(() => () => {
+    if (confirmationTimer.current) clearTimeout(confirmationTimer.current);
+  }, []);
   useEffect(() => {
     if (view === "3d") setSeen3d(true);
   }, [view]);
@@ -127,6 +138,8 @@ function Index() {
 
   const send = (text: string) => {
     if (!text.trim()) return;
+    browseRef.current = -1;
+    replaceDisplay(null);
     setMsgs((m) => [...m, { id: id(), from: "family", text }]);
     const res = parseCommand(text);
     setTimeout(() => {
@@ -140,17 +153,17 @@ function Index() {
   };
 
   const tap = () => {
-    if (override) return setOverride(null);
+    if (override) return replaceDisplay(null);
     if (!active) return;
     setReminders((rs) => rs.map((x) => (x.id === active.id ? { ...x, status: "done" } : x)));
-    setOverride({ title: "THANK YOU", body: "Done ✓  Anna knows." });
+    replaceDisplay({ title: "THANK YOU", body: "Done ✓  Anna knows." });
     bot(`💚 Your Loved One confirmed “${active.text}” at ${fmt(now)}.`);
-    setTimeout(() => setOverride((current) => current?.title === "THANK YOU" ? null : current), 2500);
+    confirmationTimer.current = setTimeout(() => { confirmationTimer.current = null; setOverride(null); }, 2500);
   };
 
   const ask = (q: "who" | "today") => {
     const visitor = people[0];
-    setOverride({
+    replaceDisplay({
       title: q === "who" ? "WHO IS THIS?" : "WHAT'S NEXT?",
       body: answer(q, people, reminders, now, visitor),
     });
@@ -158,7 +171,7 @@ function Index() {
 
   const askQuestion = (question: string) => {
     browseRef.current = -1;
-    setOverride({ title: "COCOON AI · DEMO", body: answerQuestion(question, people, reminders, now) });
+    replaceDisplay({ title: "COCOON AI · DEMO", body: answerQuestion(question, people, reminders, now) });
   };
   const gesture = (action: Gesture, source: GestureSource, simulated = false) => {
     setLastGesture(`${simulated ? "Simulated" : "Received"} · ${source} · ${action}`);
@@ -168,14 +181,14 @@ function Index() {
       if (voiceDisplay) void voiceRef.current?.stop(); else void voiceRef.current?.start();
       return;
     }
-    if (voiceDisplay) return;
+    if (voiceDisplay) replaceDisplay(null);
     if (action === "tap" || action === "menu-done") { browseRef.current = -1; tap(); return; }
-    if (action === "double-tap" || action === "menu-today") { browseRef.current = -1; setOverride(null); return; }
+    if (action === "double-tap" || action === "menu-today") { browseRef.current = -1; replaceDisplay(null); return; }
     const sorted = [...reminders].sort((a, b) => toMin(a.time) - toMin(b.time));
     const index = browseIndex(browseRef.current, action === "swipe-up" ? -1 : 1, sorted.length);
     browseRef.current = index;
     const reminder = sorted[index];
-    setOverride(reminder ? {
+    replaceDisplay(reminder ? {
       title: `${reminder.time} · ${index + 1}/${sorted.length}`,
       body: `${reminder.text}${reminder.detail ? ` — ${reminder.detail}` : ""} · ${reminder.status}`,
     } : { title: "TODAY", body: "Nothing planned. Take your time." });
@@ -319,7 +332,7 @@ function Index() {
             <Ctl onClick={() => askQuestion("What's next?")} label="“What's next?”" sub="Sample question · demo" />
             <Ctl
               onClick={() => {
-                setOverride(null);
+                replaceDisplay(null);
                 setNow((n) => n + 5);
               }}
               label="+5 minutes"
@@ -381,7 +394,7 @@ function Index() {
         onTelegramDemo={() => send("/remind 14:05 Drink water — one full glass")}
         onCocoonDemo={() => ask("today")}
         onSensorDemo={(live = false) =>
-          setOverride({
+          replaceDisplay({
             title: "SENSORS READY",
             body: live ? "G2 location + motion live" : "Location + motion · simulated",
           })
