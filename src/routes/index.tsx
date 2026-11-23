@@ -427,7 +427,7 @@ function Index() {
           </div>
         ))}
       </section>
-      {film && <GlassesFilm clock={fmt(now)} hud={screen} onClose={closeFilm} />}
+      {film && <GlassesFilm clock={fmt(now)} onClose={closeFilm} />}
     </main>
   );
 }

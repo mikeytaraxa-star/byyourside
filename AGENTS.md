@@ -41,3 +41,4 @@ use the editor.
 - Keep the hardware companion in a shared G2App used by /g2 and the standalone Even Hub entry; package only browser-safe code so the installed app needs no hosted website or bundled credentials.
 - Store the hardware schedule through Even App local storage, with browser storage as a preview fallback; reset completion on local calendar rollover without claiming family synchronization.
 - Native G2 display regions and text limits live in g2-display.ts; validate SDK containers and keep the clock aligned with the reminder heading and the action in its own bottom region.
+- Fullscreen film cues use media currentTime and a pure scene map, not wall-clock timers or scene recognition; keep scripted samples separate from live reminders and native G2 writes.

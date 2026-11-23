@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import { isValidElement } from "react";
 import dailyLife from "@/assets/daily_life_pov.mp4.asset.json";
+import { filmSceneAt } from "./film-scenes";
+import { Button } from "@/components/ui/button";
 
 const G2Scene = lazy(() => import("./G2Scene"));
 
@@ -28,24 +29,31 @@ export function ThroughView({ children, clock, onFullscreen }: { children: React
 }
 
 /** Fullscreen film: glasses go on, the day plays once through the lenses, glasses come off. */
-export function GlassesFilm({ hud, clock, onClose }: { hud: ReactNode; clock?: string; onClose: () => void }) {
+export function GlassesFilm({ clock, onClose }: { clock?: string; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const vid = useRef<HTMLVideoElement>(null);
   const [phase, setPhase] = useState<"on" | "play" | "off">("on");
+  const [scene, setScene] = useState(() => filmSceneAt(0));
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finishing = useRef(false);
+  const syncScene = () => setScene(filmSceneAt(vid.current?.currentTime ?? 0));
   useEffect(() => {
     ref.current?.requestFullscreen?.().catch(() => {});
     const t = setTimeout(() => { setPhase("play"); vid.current?.play().catch(() => {}); }, 1700);
     const exit = () => { if (!document.fullscreenElement) onClose(); };
     document.addEventListener("fullscreenchange", exit);
-    return () => { clearTimeout(t); document.removeEventListener("fullscreenchange", exit); };
+    return () => { clearTimeout(t); if (closeTimer.current) clearTimeout(closeTimer.current); document.removeEventListener("fullscreenchange", exit); };
   }, [onClose]);
   const finish = () => {
+    if (finishing.current) return;
+    finishing.current = true;
+    vid.current?.pause();
     setPhase("off");
-    setTimeout(() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); onClose(); }, 1500);
+    closeTimer.current = setTimeout(() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); onClose(); }, 1500);
   };
   return (
     <div ref={ref} className={`fixed inset-0 z-50 overflow-hidden ${phase === "off" ? "film-out" : "film-in"}`}>
-      <video ref={vid} src={dailyLife.url} playsInline onEnded={finish} className="absolute inset-0 h-full w-full object-cover" />
+      <video ref={vid} src={dailyLife.url} playsInline muted onTimeUpdate={syncScene} onSeeked={syncScene} onLoadedMetadata={syncScene} onEnded={finish} className="absolute inset-0 h-full w-full object-cover" />
       <div className={`pointer-events-none absolute inset-0 ${phase === "off" ? "eyes-close" : "eyes-open"}`} />
       <div className={`pointer-events-none absolute inset-0 ${phase === "off" ? "glasses-off" : "glasses-on"}`}>
         <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" className="h-full w-full text-frame">
@@ -60,15 +68,15 @@ export function GlassesFilm({ hud, clock, onClose }: { hud: ReactNode; clock?: s
           )}
           {phase === "play" && (
             <foreignObject clipPath="url(#right-lens)" x="985" y="245" width="350" height="175" className="[&_*]:!text-[15px] [&_.text-base]:!text-[26px]">
-              <div className="h-full w-full overflow-hidden [&_.hud-footer]:hidden">{hud}</div>
+              <div className="h-full w-full overflow-hidden [&_.hud-footer]:hidden"><Hud title={scene.title} body={scene.body} footer={scene.footer} /></div>
             </foreignObject>
           )}
-          {phase === "play" && isValidElement(hud) && (hud.props as { footer?: string }).footer && (
-            <text x="1150" y="660" textAnchor="middle" className="hud-glow fill-hud" fontSize="18" opacity="0.8">{(hud.props as { footer?: string }).footer}</text>
+          {phase === "play" && (
+            <text x="1150" y="660" textAnchor="middle" className="hud-glow fill-hud" fontSize="18" opacity="0.8">{scene.footer}</text>
           )}
         </svg>
       </div>
-      <button onClick={finish} className="absolute right-6 top-6 rounded-full bg-background/70 px-4 py-2 text-sm text-foreground">Take glasses off ✕</button>
+      <Button onClick={finish} variant="outline" className="absolute right-6 top-6 bg-background/70">Take glasses off ✕</Button>
     </div>
   );
 }
