@@ -4,11 +4,11 @@ import dailyLife from "@/assets/daily_life_pov.mp4.asset.json";
 const G2Scene = lazy(() => import("./G2Scene"));
 
 /** Interactive 3D Even G2 model (client-only); the HUD sits in the upper-right of the right lens. */
-export function Glasses3D({ children }: { children: ReactNode }) {
+export function Glasses3D({ children, clock }: { children: ReactNode; clock?: string | undefined }) {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
   if (!ready) return null;
-  return <Suspense fallback={null}><G2Scene hud={children} /></Suspense>;
+  return <Suspense fallback={null}><G2Scene hud={children} clock={clock} /></Suspense>;
 }
 
 /** First-person "through the glasses" view: looping daily-life video behind the HUD. */
