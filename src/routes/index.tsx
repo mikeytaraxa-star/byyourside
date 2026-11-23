@@ -7,6 +7,7 @@ import { useVoiceQuestion } from "@/hooks/use-voice-question";
 import { InteractionControls } from "@/components/demo/InteractionControls";
 import { browseIndex, type Gesture, type GestureSource } from "@/components/demo/gestures";
 import { Button } from "@/components/ui/button";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import logo from "@/assets/byyourside_heart_hand_logo.svg.asset.json";
 import shareImage from "@/assets/byyourside_share.png.asset.json";
 import { getRequestOrigin } from "@/lib/origin.functions";
@@ -439,6 +440,7 @@ function Index() {
         ))}
       </section>
       {film && <GlassesFilm clock={fmt(now)} onClose={closeFilm} />}
+      <SiteFooter />
     </main>
   );
 }
