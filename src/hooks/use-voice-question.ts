@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import type { EvenHubController } from "./use-even-hub";
-import { audioBase64, MAX_PCM_BYTES, MAX_RECORDING_MS, pcmToWav } from "@/lib/voice-audio";
-import { transcribeQuestion } from "@/lib/voice.functions";
+import { MAX_PCM_BYTES, MAX_RECORDING_MS, pcmToWav } from "@/lib/voice-audio";
 
-export type VoiceStatus = "idle" | "requesting" | "listening" | "transcribing" | "error";
+export type VoiceStatus = "idle" | "requesting" | "listening" | "previewing" | "error";
 export function useVoiceQuestion(g2: EvenHubController, onTranscript: (text: string) => void) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [consent, setConsent] = useState(false);
   const [message, setMessage] = useState("");
   const [transcript, setTranscript] = useState("");
+  const [demoQuestion, setDemoQuestion] = useState("What's next?");
+  const selectedQuestion = useRef(demoQuestion);
+  selectedQuestion.current = demoQuestion;
   const state = useRef<VoiceStatus>("idle");
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -18,7 +19,6 @@ export function useVoiceQuestion(g2: EvenHubController, onTranscript: (text: str
   const native = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const generation = useRef(0);
-  const send = useServerFn(transcribeQuestion);
   const callback = useRef(onTranscript);
   callback.current = onTranscript;
   const update = useCallback((next: VoiceStatus) => { state.current = next; setStatus(next); }, []);
@@ -35,23 +35,20 @@ export function useVoiceQuestion(g2: EvenHubController, onTranscript: (text: str
     update("error");
     setMessage(error instanceof Error ? error.message : "Microphone unavailable. You can type your question instead.");
   }, [cleanup, update]);
-  const upload = useCallback(async (audio: Blob, token: number) => {
+  const preview = useCallback(async (audio: Blob, token: number) => {
     cleanup();
     if (token !== generation.current) return;
-    update("transcribing");
+    update("previewing");
     try {
       if (audio.size < 100) throw new Error("No audio was recorded. Please try again.");
-      const mime = audio.type.split(";")[0];
-      if (mime !== "audio/wav" && mime !== "audio/webm" && mime !== "audio/mp4" && mime !== "audio/ogg") throw new Error("This browser's recording format is not supported.");
-      const result = await send({ data: { audio: await audioBase64(audio), mime } });
-      if (token !== generation.current) return;
-      if (!result.ok) throw new Error(result.error);
-      setTranscript(result.text);
-      setMessage("");
+      // Never upload or transcribe audio: the selected question is explicit demo data.
+      const question = selectedQuestion.current;
+      setTranscript(question);
+      setMessage("Cocoon AI demo · sample question, not speech recognition.");
       update("idle");
-      callback.current(result.text);
+      callback.current(question);
     } catch (error) { if (token === generation.current) fail(error); }
-  }, [cleanup, fail, send, update]);
+  }, [cleanup, fail, update]);
   const stop = useCallback(async () => {
     if (state.current === "requesting") {
       generation.current += 1; cleanup(); update("idle");
@@ -59,18 +56,18 @@ export function useVoiceQuestion(g2: EvenHubController, onTranscript: (text: str
       return;
     }
     if (state.current !== "listening") return;
-    update("transcribing");
+    update("previewing");
     if (native.current) {
       try {
         await g2.stopAudio();
         const audio = pcmToWav(pcm.current);
-        await upload(audio, generation.current);
+        await preview(audio, generation.current);
       } catch (error) { fail(error); }
     } else if (recorder.current?.state === "recording") recorder.current.stop();
-  }, [cleanup, fail, g2.stopAudio, update, upload]);
+  }, [cleanup, fail, g2.stopAudio, update, preview]);
   const start = useCallback(async () => {
-    if (state.current === "listening" || state.current === "requesting" || state.current === "transcribing") return;
-    if (!consent) { setMessage("Allow speech transcription below before starting the microphone."); return; }
+    if (state.current === "listening" || state.current === "requesting" || state.current === "previewing") return;
+    if (!consent) { setMessage("Allow the local microphone demo below before starting."); return; }
     const token = ++generation.current;
     setMessage(""); setTranscript(""); update("requesting");
     native.current = g2.status === "connected";
@@ -92,14 +89,14 @@ export function useVoiceQuestion(g2: EvenHubController, onTranscript: (text: str
         recorder.current = rec;
         const chunks: Blob[] = [];
         rec.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
-        rec.onstop = () => { void upload(new Blob(chunks, { type: rec.mimeType }), token); };
+        rec.onstop = () => { void preview(new Blob(chunks, { type: rec.mimeType }), token); };
         rec.onerror = () => { generation.current += 1; fail(new Error("The microphone recording was interrupted.")); };
         rec.start(250);
       }
       update("listening");
       timer.current = setTimeout(() => { void stop(); }, MAX_RECORDING_MS);
     } catch (error) { if (token === generation.current) fail(error); }
-  }, [consent, fail, g2.status, g2.startAudio, g2.stopAudio, stop, update, upload]);
+  }, [consent, fail, g2.status, g2.startAudio, g2.stopAudio, stop, update, preview]);
   useEffect(() => () => {
     generation.current += 1;
     if (recorder.current?.state === "recording") recorder.current.stop();
@@ -110,5 +107,5 @@ export function useVoiceQuestion(g2: EvenHubController, onTranscript: (text: str
       generation.current += 1; cleanup(); update("error"); setMessage("G2 disconnected. Please reconnect or use this device's microphone.");
     }
   }, [g2.status, cleanup, update]);
-  return { status, consent, setConsent, message, transcript, start, stop };
+  return { status, consent, setConsent, message, transcript, demoQuestion, setDemoQuestion, start, stop };
 }

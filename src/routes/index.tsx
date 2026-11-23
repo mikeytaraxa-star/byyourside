@@ -158,7 +158,7 @@ function Index() {
 
   const askQuestion = (question: string) => {
     browseRef.current = -1;
-    setOverride({ title: "ANSWER · DEMO", body: answerQuestion(question, people, reminders, now) });
+    setOverride({ title: "COCOON AI · DEMO", body: answerQuestion(question, people, reminders, now) });
   };
   const gesture = (action: Gesture, source: GestureSource, simulated = false) => {
     setLastGesture(`${simulated ? "Simulated" : "Received"} · ${source} · ${action}`);
@@ -188,8 +188,8 @@ function Index() {
   const voice = useVoiceQuestion(g2, askQuestion);
   voiceRef.current = voice;
   useEffect(() => {
-    setVoiceDisplay(voice.status === "listening" ? { title: "LISTENING", body: "Take your time. I'm listening.", footer: "release to send" }
-      : voice.status === "transcribing" ? { title: "ONE MOMENT", body: "Reading your question…", footer: "" }
+    setVoiceDisplay(voice.status === "listening" ? { title: "MICROPHONE · DEMO", body: "Take your time.", footer: "release for sample answer" }
+      : voice.status === "previewing" ? { title: "COCOON AI · DEMO", body: "Showing a sample answer…", footer: "" }
       : voice.status === "requesting" ? { title: "MICROPHONE", body: "Opening the microphone…", footer: "" } : null);
   }, [voice.status]);
   const screen = <Hud {...hud} />;
@@ -315,7 +315,7 @@ function Index() {
               sub={active ? "Confirm reminder" : "Close"}
               primary
             />
-            <Ctl onClick={() => { void voice.start(); }} label="Ask a question" sub="Real microphone" />
+            <Ctl onClick={() => { void voice.start(); }} label="Ask a question" sub="Microphone · demo data" />
             <Ctl onClick={() => askQuestion("What's next?")} label="“What's next?”" sub="Sample question · demo" />
             <Ctl
               onClick={() => {

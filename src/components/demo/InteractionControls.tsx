@@ -14,7 +14,7 @@ export function InteractionControls({ voice, live, lastGesture, onGesture, onQue
   const [source, setSource] = useState<GestureSource>("Right temple");
   const [question, setQuestion] = useState("");
   const recording = voice.status === "listening";
-  const busy = voice.status === "requesting" || voice.status === "transcribing";
+  const busy = voice.status === "requesting" || voice.status === "previewing";
   return (
     <div className="space-y-4 border-y border-border py-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -52,20 +52,27 @@ export function InteractionControls({ voice, live, lastGesture, onGesture, onQue
       <div className="space-y-3 border-t border-border pt-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-semibold">Ask ByYourSide</h3>
-          <span className="text-xs text-muted-foreground">{live ? "G2 microphone" : "This device's real microphone"} · answer demo</span>
+          <span className="text-xs text-muted-foreground">Cocoon AI · demo data</span>
         </div>
         <label className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
           <input type="checkbox" className="mt-0.5 accent-primary" checked={voice.consent} disabled={busy || recording} onChange={(event) => voice.setConsent(event.target.checked)} />
-          <span>Allow this recording to be sent to OpenAI speech transcription through Lovable AI, not Cocoon. ByYourSide does not save the audio. Up to 20 seconds.</span>
+          <span>Allow the local microphone demo. Audio is discarded, never uploaded. Sample questions and answers use demo data, not speech recognition. Up to 20 seconds.</span>
         </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="voice-demo-question" className="text-xs text-muted-foreground">Sample question</label>
+          <select id="voice-demo-question" value={voice.demoQuestion} disabled={busy || recording}
+            onChange={(event) => voice.setDemoQuestion(event.target.value)} className="rounded-md border border-input bg-background px-2 py-1 text-sm">
+            <option>What's next?</option><option>Who is Anna?</option><option>Who is Peter?</option>
+          </select>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button disabled={busy} onClick={() => { if (recording) void voice.stop(); else void voice.start(); }}>
             {recording ? <Square /> : <Mic />}
-            {recording ? "Stop listening" : voice.status === "transcribing" ? "Transcribing…" : voice.status === "requesting" ? "Opening microphone…" : "Ask with microphone"}
+            {recording ? "Stop listening" : voice.status === "previewing" ? "Showing demo…" : voice.status === "requesting" ? "Opening microphone…" : "Try microphone demo"}
           </Button>
           <span role="status" className="text-sm text-muted-foreground">{recording ? "Listening…" : voice.message}</span>
         </div>
-        {voice.transcript && <p className="text-sm"><span className="text-muted-foreground">Heard: </span>{voice.transcript}</p>}
+        {voice.transcript && <p className="text-sm"><span className="text-muted-foreground">Demo question: </span>{voice.transcript}</p>}
         <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); if (question.trim()) { onQuestion(question.trim()); setQuestion(""); } }}>
           <input aria-label="Type a question" placeholder="What’s next?" maxLength={300} value={question} onChange={(event) => setQuestion(event.target.value)} className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm" />
           <Button type="submit" size="icon" variant="outline" disabled={!question.trim()} aria-label="Ask typed question"><Send /></Button>

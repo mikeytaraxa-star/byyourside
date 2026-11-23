@@ -17,10 +17,3 @@ export function pcmToWav(chunks: Uint8Array[]): Blob {
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   return new Blob([bytes], { type: "audio/wav" });
 }
-
-export async function audioBase64(blob: Blob): Promise<string> {
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
-  return btoa(binary);
-}

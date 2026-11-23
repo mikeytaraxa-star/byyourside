@@ -39,10 +39,10 @@ No medical monitoring, fall detection, or real-time safety guarantee is claimed 
 
 - Single tap confirms only the currently due reminder; it closes an answer or reminder preview without completing a future reminder.
 - Swipe up/down cycles the day's reminders. Double tap returns to the current-day display.
-- Long press starts recording; release stops recording and submits the captured question. The paired R1 ring uses the same mapping; the app does not independently pair a ring.
+- Long press starts local recording; release discards the audio and shows the selected sample question's answer. The paired R1 ring uses the same mapping; the app does not independently pair a ring.
 - The G2 contextual menu registers Done, Next reminder, Ask a question, and Today. Ask toggles recording; Stop listening is also available on the phone/browser.
 - In a regular browser, on-screen gestures explicitly simulate input, but the microphone captures real audio via permission-gated MediaRecorder. G2 uses audioControl and 16 kHz mono signed 16-bit PCM wrapped as WAV.
-- A separate consent checkbox is required before either microphone starts. Speech audio goes to `openai/gpt-transcribe` through the server-only Lovable AI SDK, not Cocoon. No private table reads or audio storage occur. The recording stops after 20 seconds; the server validates format and payload size.
-- Transcripts feed grounded local showcase answers from the current reminders and people. These are not claimed as live Cocoon answers. Unknown questions do not invent location, identity, or medical advice.
-- Permission denial, no speech, unavailable transcription, and credit errors preserve a typed-question alternative.
+- A separate consent checkbox is required before either microphone starts. Audio stays local and is discarded, never uploaded or transcribed. Recording stops after 20 seconds. No external transcription service or other AI provider is used.
+- The explicitly selected sample question feeds grounded local showcase answers from current reminders and people, labeled Cocoon AI demo. This is demo data, not live speech recognition or a live Cocoon response. Typed questions remain available. Unknown questions do not invent location, identity, or medical advice.
+- Permission denial and unavailable microphone capture preserve a typed-question alternative.
 - Real hardware behavior requires Even App, compatible firmware, and paired devices; it has not been physically verified in this no-hardware project.
