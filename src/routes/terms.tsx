@@ -25,7 +25,7 @@ function Terms() {
       <section><h2>7. Third-party services</h2><p>ByYourSide works with Telegram, Even Realities glasses and Even App, and optionally Cocoon. Those services have their own terms, and we are not responsible for their availability or behavior.</p></section>
       <section><h2>8. Provided "as is"</h2><p>The service is provided "as is" and "as available", without warranties of any kind. To the fullest extent the law allows, ByYourSide and its creators are not liable for any direct or indirect loss or harm arising from its use, including missed reminders.</p></section>
       <section><h2>9. Changes and ending use</h2><p>We may change or stop the service, or these terms, at any time. Continued use after a change means you accept the updated terms. You can stop using ByYourSide at any time; stop using the bot and uninstall the glasses app.</p></section>
-      <section><h2>10. Contact</h2><p>Questions about these terms can be sent to the ByYourSide team through the Telegram bot.</p></section>
+      <section><h2>10. Contact</h2><p>Questions about these terms can be sent to the ByYourSide team through the Telegram bot, <a href="https://t.me/bysappbot" target="_blank" rel="noreferrer">@bysappbot</a>.</p></section>
     </DocPage>
   );
 }
