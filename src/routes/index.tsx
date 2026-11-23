@@ -111,14 +111,21 @@ function Index() {
 
       <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-10 lg:grid-cols-[380px_1fr]">
         {/* Telegram */}
-        <div className="flex h-[640px] flex-col overflow-hidden rounded-3xl border border-border bg-tg-bg shadow-2xl">
-          <div className="flex items-center gap-3 bg-tg px-4 py-3 text-primary-foreground">
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-background/20 font-bold">R</div>
+        <div className="mx-auto w-[360px] rounded-[3.2rem] bg-gradient-to-b from-muted-foreground/40 to-muted/60 p-[3px] shadow-2xl">
+        <div className="rounded-[3.05rem] bg-background p-[10px]">
+        <div className="relative flex h-[660px] flex-col overflow-hidden rounded-[2.5rem] bg-tg-bg">
+          <div className="flex items-center justify-between bg-tg px-7 pt-3 text-[11px] font-semibold text-primary-foreground">
+            <span>9:41</span>
+            <div className="h-6 w-24 rounded-full bg-background" />
+            <span>5G ▮</span>
+          </div>
+          <div className="flex items-center gap-3 bg-tg px-4 pb-3 pt-2 text-primary-foreground">
+            <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-card"><img src={logo.url} alt="" className="h-7 w-7 object-contain" /></div>
             <div><div className="font-semibold">ByYourSide Bot</div><div className="text-xs opacity-80">Family of Your Loved One · 3 members</div></div>
           </div>
           <div ref={chatRef} className="flex-1 space-y-2 overflow-y-auto p-3">
             {msgs.map((m) => (
-              <div key={m.id} className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm ${m.from === "family" ? "ml-auto bg-tg text-primary-foreground" : "bg-tg-bubble"}`}>{m.text}</div>
+              <div key={m.id} className={`animate-msg-in max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm ${m.from === "family" ? "ml-auto bg-tg text-primary-foreground" : "bg-tg-bubble"}`}>{m.text}</div>
             ))}
           </div>
           <div className="flex flex-wrap gap-1.5 px-3 pb-2">
@@ -130,6 +137,9 @@ function Index() {
             <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="/remind 18:00 Dinner — soup in fridge" className="flex-1 rounded-full bg-tg-bubble px-4 py-2 text-sm outline-none placeholder:text-muted-foreground" />
             <button className="rounded-full bg-tg px-4 text-sm font-semibold text-primary-foreground">Send</button>
           </form>
+          <div className="mx-auto mb-2 h-1 w-28 rounded-full bg-foreground/50" />
+        </div>
+        </div>
         </div>
 
         {/* Glasses */}

@@ -141,3 +141,6 @@
 .glasses-off { animation: glasses-off 1.4s cubic-bezier(.6,0,.75,.3) both; transform-origin: 50% 45%; will-change: transform, opacity; }
 .lens-clear { animation: lens-clear 1.8s ease-out both; }
 .lens-fog { animation: lens-fog 1.4s ease-in both; }
+
+@keyframes msg-in { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: none; } }
+@utility animate-msg-in { animation: msg-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
