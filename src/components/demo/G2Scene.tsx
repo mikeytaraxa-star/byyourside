@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { ContactShadows, Environment, Lightformer, RoundedBox } from "@react-three/drei";
+import { ContactShadows, Environment, Html, Lightformer, RoundedBox } from "@react-three/drei";
 import { useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
@@ -28,7 +28,7 @@ function useGrain() {
   }, []);
 }
 
-function Glasses() {
+function Glasses({ hud }: { hud: ReactNode }) {
   const grain = useGrain();
   const group = useRef<THREE.Group>(null);
   useFrame((st) => { const g = group.current; if (!g) return; g.position.y = Math.sin(st.clock.elapsedTime * 0.8) * 0.03; g.rotation.y += (st.pointer.x * 0.12 - 0.12 - g.rotation.y) * 0.05; g.rotation.x += (-st.pointer.y * 0.06 + 0.05 - g.rotation.x) * 0.05; });
@@ -55,6 +55,10 @@ function Glasses() {
           <mesh position={[-0.78, -0.25, -0.22]}><sphereGeometry args={[0.09, 24, 24]} /><meshPhysicalMaterial transmission={0.9} roughness={0.15} color="#ffffff" /></mesh>
         </group>
       ))}
+      {/* G2 display: anchored inside the upper part of the right lens, above the line of sight, so it moves with the frame. */}
+      <Html transform position={[1.22, 0.3, 0.12]} distanceFactor={1.6} pointerEvents="none" zIndexRange={[5, 0]}>
+        <div style={{ width: 300 }}>{hud}</div>
+      </Html>
       {/* keyhole bridge */}
       <mesh position={[0, 0.32, 0.07]} rotation={[0, 0, 0]} castShadow><torusGeometry args={[0.2, 0.08, 20, 40, Math.PI]} />{frame}</mesh>
     </group>
@@ -71,7 +75,7 @@ export default function G2Scene({ hud }: { hud: ReactNode }) {
       <directionalLight position={[0, 2, 6]} intensity={1.6} color="#fff1e2" />
       <spotLight position={[4, 6, 5]} angle={0.4} penumbra={0.8} intensity={60} color="#ffd2a1" castShadow />
       <pointLight position={[-5, 1, 2]} intensity={8} color="#e8894a" />
-      <Glasses />
+      <Glasses hud={hud} />
       <ContactShadows position={[0, -1.6, 0]} opacity={0.55} scale={12} blur={2.6} far={4} color="#000000" />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.62, 0]} receiveShadow>
         <circleGeometry args={[9, 64]} /><meshStandardMaterial color="#3a2a1f" roughness={0.9} />
@@ -82,8 +86,6 @@ export default function G2Scene({ hud }: { hud: ReactNode }) {
         <Lightformer intensity={0.8} color="#fff" position={[6, 0, 2]} rotation-y={-Math.PI / 2} scale={[10, 2, 1]} />
       </Environment>
     </Canvas>
-      {/* G2 display: projected into the upper part of the right lens, above the line of sight. */}
-      <div className="pointer-events-none absolute left-[54.5%] top-[28%] w-[21%] [transform:perspective(800px)_rotateY(-6deg)]">{hud}</div>
     </div>
   );
 }
