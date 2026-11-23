@@ -20,18 +20,21 @@ export type Database = {
           display_name: string
           id: string
           telegram_chat_id: number
+          timezone: string
         }
         Insert: {
           created_at?: string
           display_name?: string
           id?: string
           telegram_chat_id: number
+          timezone?: string
         }
         Update: {
           created_at?: string
           display_name?: string
           id?: string
           telegram_chat_id?: number
+          timezone?: string
         }
         Relationships: []
       }
@@ -72,32 +75,41 @@ export type Database = {
       }
       reminders: {
         Row: {
+          alerted_on: string | null
           circle_id: string
           confirmed_at: string | null
+          confirmed_on: string | null
           created_at: string
           detail: string | null
           id: string
           local_time: string
+          nudged_on: string | null
           status: string
           title: string
         }
         Insert: {
+          alerted_on?: string | null
           circle_id: string
           confirmed_at?: string | null
+          confirmed_on?: string | null
           created_at?: string
           detail?: string | null
           id?: string
           local_time: string
+          nudged_on?: string | null
           status?: string
           title: string
         }
         Update: {
+          alerted_on?: string | null
           circle_id?: string
           confirmed_at?: string | null
+          confirmed_on?: string | null
           created_at?: string
           detail?: string | null
           id?: string
           local_time?: string
+          nudged_on?: string | null
           status?: string
           title?: string
         }

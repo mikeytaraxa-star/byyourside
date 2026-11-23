@@ -34,3 +34,15 @@ export function dueSelection(session: G2Session, now: number): G2Session {
   const index = session.reminders.findIndex(row => row.status === 'pending' && toMin(row.time) <= now);
   return index >= 0 ? { ...session, selected: index } : session;
 }
+
+export const MISSED_AFTER_MINUTES = 15;
+/** Pending reminders more than 15 minutes overdue, earliest first. */
+export function missedReminders(session: G2Session, now: number) {
+  return session.reminders.filter(row => row.status === 'pending' && now - toMin(row.time) >= MISSED_AFTER_MINUTES).sort((a, b) => toMin(a.time) - toMin(b.time));
+}
+/** On opening: jump to the earliest missed reminder first, otherwise the earliest due one. */
+export function openingSelection(session: G2Session, now: number): G2Session {
+  const first = missedReminders(session, now)[0];
+  if (first) return { ...session, selected: session.reminders.findIndex(row => row.id === first.id) };
+  return dueSelection(session, now);
+}

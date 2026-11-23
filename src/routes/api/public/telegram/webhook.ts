@@ -3,6 +3,7 @@ import { createHash, timingSafeEqual } from "crypto";
 import { z } from "zod";
 import { parseCommand } from "@/components/demo/engine";
 import type { Json } from "@/integrations/supabase/types";
+import { isValidTimeZone, localClock, parseDone } from "@/lib/reminder-alerts";
 
 const messageSchema = z
   .object({
@@ -120,7 +121,27 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         let reply = "";
         if (text === "/start" || text === "/help") {
           reply =
-            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?";
+            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nSet your time zone (for reminder alerts):\n/timezone Europe/Berlin\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
+        } else if (/^\/timezone(?:@\w+)?\s+/i.test(text)) {
+          const tz = text.replace(/^\/timezone(?:@\w+)?\s+/i, "").trim();
+          if (!isValidTimeZone(tz)) reply = "⚠️ I don't know that time zone. Try /timezone Europe/Berlin or /timezone America/New_York";
+          else {
+            const { error } = await supabaseAdmin.from("care_circles").update({ timezone: tz }).eq("id", circle.id);
+            reply = error ? `⚠️ I couldn't save the time zone: ${error.message}` : `🕰 Time zone set to ${tz}. Reminders and check-ins follow this clock.`;
+          }
+        } else if (parseDone(text)) {
+          const wanted = parseDone(text)?.time ?? null;
+          const { data: tzRow } = await supabaseAdmin.from("care_circles").select("timezone").eq("id", circle.id).single();
+          const { date, minute } = localClock(new Date(), tzRow?.timezone ?? "UTC");
+          const { data: rows } = await supabaseAdmin.from("reminders").select("id, local_time, title, confirmed_on").eq("circle_id", circle.id).order("local_time");
+          const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+          const open = (rows ?? []).filter((row) => row.confirmed_on !== date && toMin(row.local_time) <= minute);
+          const match = wanted ? open.find((row) => row.local_time.slice(0, 5) === wanted) : open[open.length - 1];
+          if (!match) reply = wanted ? `I couldn't find an open reminder at ${wanted} today.` : "There's nothing due to confirm right now. 💚";
+          else {
+            const { error } = await supabaseAdmin.from("reminders").update({ confirmed_on: date, confirmed_at: new Date().toISOString(), status: "done" }).eq("id", match.id);
+            reply = error ? `⚠️ I couldn't confirm that: ${error.message}` : `✅ ${match.title} (${match.local_time.slice(0, 5)}) is done. Thank you!`;
+          }
         } else if (/^\/ask\s+/i.test(text)) {
           const question = text.replace(/^\/ask\s+/i, "").slice(0, 500);
           const [{ data: reminders }, { data: people }] = await Promise.all([

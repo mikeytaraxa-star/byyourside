@@ -8,6 +8,13 @@
       "when": 1795465392243,
       "tag": "0000_create_byyourside_live_integration_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795472963046,
+      "tag": "0001_reminder_backup_alerts",
+      "breakpoints": true
     }
   ]
 }

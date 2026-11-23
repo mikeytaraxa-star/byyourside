@@ -5,7 +5,7 @@ import { useEvenHub } from '@/hooks/use-even-hub';
 import { fmt, parseCommand, toMin, type Reminder } from '@/components/demo/engine';
 import type { Gesture, GestureSource } from '@/components/demo/gestures';
 import { latestUpdateQueue } from '@/lib/latest-update';
-import { applyG2Gesture, dueSelection, emptySession, restoreSession, todayKey, type G2Session } from './session';
+import { applyG2Gesture, dueSelection, emptySession, missedReminders, openingSelection, restoreSession, todayKey, MISSED_AFTER_MINUTES, type G2Session } from './session';
 
 const STORAGE_KEY = 'byyourside.g2.schedule.v1';
 export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
@@ -29,19 +29,22 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
   const minute = now ? now.getHours() * 60 + now.getMinutes() : 0;
   const hasClock = now !== null;
   const selected = session.reminders[session.selected];
+  const missedCount = hasClock ? missedReminders(session, minute).length : 0;
+  const selectedMissed = Boolean(selected && hasClock && selected.status === 'pending' && minute - toMin(selected.time) >= MISSED_AFTER_MINUTES);
   const display = useMemo(() => ({
     clock: hasClock ? fmt(minute) : '--:--',
-    title: recording ? 'MICROPHONE' : selected ? `${selected.status === 'done' ? 'DONE' : 'TODAY'} · ${selected.time}` : 'TODAY',
+    title: recording ? 'MICROPHONE' : selected ? `${selected.status === 'done' ? 'DONE' : selectedMissed ? (missedCount > 1 ? `EARLIER · 1 OF ${missedCount}` : 'EARLIER') : 'TODAY'} · ${selected.time}` : 'TODAY',
     body: recording ? 'Listening locally' : selected ? `${selected.text}${selected.detail ? `. ${selected.detail}` : ''}` : 'Nothing planned. Take your time.',
-    footer: recording ? 'Release to stop' : selected?.status === 'done' ? 'All done. Thank you.' : selected && toMin(selected.time) <= minute ? 'Tap = done' : selected ? 'Not due yet' : '',
-  }), [selected, hasClock, minute, recording]);
+    footer: recording ? 'Release to stop' : selectedMissed ? 'Still to do? Tap = done' : selected?.status === 'done' ? 'All done. Thank you.' : selected && toMin(selected.time) <= minute ? 'Tap = done' : selected ? 'Not due yet' : '',
+  }), [selected, hasClock, minute, recording, selectedMissed, missedCount]);
   const hub = useEvenHub({ display, onGesture: (gesture, source) => gestureRef.current(gesture, source), autoSensors: false });
   const connected = hub.status === 'connected';
 
   useEffect(() => {
     const date = new Date();
     setNow(date);
-    try { setSession(restoreSession(localStorage.getItem(STORAGE_KEY) ?? '')); } catch { setNotice('Phone storage unavailable.'); }
+    const openMinute = date.getHours() * 60 + date.getMinutes();
+    try { setSession(openingSelection(restoreSession(localStorage.getItem(STORAGE_KEY) ?? ''), openMinute)); } catch { setNotice('Phone storage unavailable.'); }
     setReady(true);
     let previousMinute = date.getHours() * 60 + date.getMinutes();
     const interval = setInterval(() => {
@@ -70,7 +73,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
     }, () => setNotice('Even App could not save this schedule.'));
     void hub.readStorage(STORAGE_KEY).then(raw => {
       if (!active) return;
-      if (raw) setSession(restoreSession(raw));
+      if (raw) { const d = new Date(); setSession(openingSelection(restoreSession(raw), d.getHours() * 60 + d.getMinutes())); }
       setNativeLoaded(true);
     }).catch(() => { if (active) setNotice('Even App storage could not be read. Reconnect before saving changes.'); });
     return () => { active = false; nativeWriter.current?.stop(); nativeWriter.current = null; };

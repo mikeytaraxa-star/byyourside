@@ -1,0 +1,2 @@
+ALTER TABLE public.care_circles ADD COLUMN IF NOT EXISTS timezone text NOT NULL DEFAULT 'UTC';
+ALTER TABLE public.reminders ADD COLUMN IF NOT EXISTS nudged_on date, ADD COLUMN IF NOT EXISTS alerted_on date, ADD COLUMN IF NOT EXISTS confirmed_on date;

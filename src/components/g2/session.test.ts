@@ -42,3 +42,13 @@ describe('hardware schedule', () => {
     expect(restoreSession(JSON.stringify({ ...session, reminders: [{ ...session.reminders[0], text: 'a'.repeat(301) }] })).reminders).toHaveLength(0);
   });
 });
+import { openingSelection as _open, missedReminders as _missed } from './session';
+describe('catch-up on opening', () => {
+  const s = { date: '2026-11-23', sample: false, selected: 2, reminders: [
+    { id: 'a', time: '08:00', text: 'Blue pill', status: 'done' as const },
+    { id: 'b', time: '09:00', text: 'Water', status: 'pending' as const },
+    { id: 'c', time: '12:00', text: 'Lunch', status: 'pending' as const },
+  ] };
+  it('opens on the earliest missed reminder first', () => { expect(_open(s, 12 * 60 + 5).selected).toBe(1); });
+  it('counts reminders 15+ minutes overdue as missed', () => { expect(_missed(s, 9 * 60 + 15).map(r => r.id)).toEqual(['b']); expect(_missed(s, 9 * 60 + 14)).toEqual([]); });
+});
