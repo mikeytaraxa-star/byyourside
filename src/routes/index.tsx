@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Glasses3D, Hud, ThroughView } from "@/components/demo/Glasses";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Glasses3D, GlassesFilm, Hud, ThroughView } from "@/components/demo/Glasses";
+import logo from "@/assets/byyourside_logo.png.asset.json";
 import { answer, fmt, parseCommand, toMin, type Msg, type Person, type Reminder } from "@/components/demo/engine";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Recall — Telegram + smart glasses for dementia care" },
+      { title: "ByYourSide — Telegram + smart glasses for dementia care" },
       { name: "description", content: "Family sets reminders in Telegram; Mom sees them on Even G2 glasses and confirms with a tap. Private AI on TON Cocoon." },
-      { property: "og:title", content: "Recall — memory assistant on Even G2" },
+      { property: "og:title", content: "ByYourSide — memory assistant on Even G2" },
       { property: "og:description", content: "Interactive demo: Telegram bot for family, glasses view for the patient." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -31,11 +32,12 @@ function Index() {
     { name: "Peter", relation: "son", note: "He drives you to the doctor." },
   ]);
   const [msgs, setMsgs] = useState<Msg[]>([
-    { id: id(), from: "bot", text: "👋 Hi Anna! I'm Recall. I help Mom remember. Add reminders and people below." },
+    { id: id(), from: "bot", text: "👋 Hi Anna! I'm ByYourSide. I help Mom remember. Add reminders and people below." },
   ]);
   const [override, setOverride] = useState<{ title: string; body: string } | null>(null);
   const [view, setView] = useState<"3d" | "pov">("pov");
   const [input, setInput] = useState("");
+  const [film, setFilm] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const bot = (text: string) => setMsgs((m) => [...m, { id: id(), from: "bot", text }]);
 
@@ -90,12 +92,14 @@ function Index() {
   };
 
   const screen = <Hud {...hud} />;
+  const closeFilm = useCallback(() => setFilm(false), []);
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="mx-auto max-w-7xl px-5 pb-6 pt-10">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">Even Realities G2 · Telegram · TON Cocoon</p>
-        <h1 className="mt-3 max-w-3xl font-display text-4xl font-bold leading-[1.05] sm:text-6xl">
+      <header className="mx-auto flex max-w-7xl flex-col items-center px-5 pb-6 pt-10 text-center">
+        <img src={logo.url} alt="ByYourSide logo" className="mb-4 h-24 w-24" />
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">ByYourSide · Even Realities G2 · Telegram · TON Cocoon</p>
+        <h1 className="mt-3 max-w-4xl font-display text-4xl font-bold leading-[1.05] sm:text-6xl">
           Family remembers <span className="text-primary">for</span> Mom — right in front of her eyes.
         </h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">
@@ -108,7 +112,7 @@ function Index() {
         <div className="flex h-[640px] flex-col overflow-hidden rounded-3xl border border-border bg-tg-bg shadow-2xl">
           <div className="flex items-center gap-3 bg-tg px-4 py-3 text-primary-foreground">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-background/20 font-bold">R</div>
-            <div><div className="font-semibold">Recall Bot</div><div className="text-xs opacity-80">Family of Mom · 3 members</div></div>
+            <div><div className="font-semibold">ByYourSide Bot</div><div className="text-xs opacity-80">Family of Mom · 3 members</div></div>
           </div>
           <div ref={chatRef} className="flex-1 space-y-2 overflow-y-auto p-3">
             {msgs.map((m) => (
@@ -136,10 +140,9 @@ function Index() {
                 </button>
               ))}
             </div>
-            <div className="font-mono text-sm text-muted-foreground">🕑 {fmt(now)}</div>
           </div>
           <div className="h-[420px] rounded-3xl border border-border bg-card">
-            {view === "pov" ? <ThroughView>{screen}</ThroughView> : <Glasses3D>{screen}</Glasses3D>}
+            {view === "pov" ? <ThroughView onFullscreen={() => setFilm(true)}>{screen}</ThroughView> : <Glasses3D>{screen}</Glasses3D>}
           </div>
           <div className="grid gap-3 sm:grid-cols-4">
             <Ctl onClick={tap} label="Tap temple" sub={active ? "Confirm reminder" : "Close"} primary />
@@ -174,6 +177,7 @@ function Index() {
           <div key={t} className="rounded-2xl border border-border bg-card p-5"><h3 className="font-display text-xl font-bold">{t}</h3><p className="mt-2 text-sm text-muted-foreground">{d}</p></div>
         ))}
       </section>
+      {film && <GlassesFilm hud={screen} onClose={closeFilm} />}
     </main>
   );
 }

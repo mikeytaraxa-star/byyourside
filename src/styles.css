@@ -83,31 +83,31 @@
 
 :root {
   --radius: 0.9rem;
-  --background: oklch(0.16 0.015 160);
-  --foreground: oklch(0.95 0.01 120);
-  --card: oklch(0.2 0.018 160);
+  --background: oklch(0.17 0.02 50);
+  --foreground: oklch(0.96 0.02 80);
+  --card: oklch(0.21 0.025 50);
   --card-foreground: oklch(0.95 0.01 120);
-  --popover: oklch(0.2 0.018 160);
+  --popover: oklch(0.21 0.025 50);
   --popover-foreground: oklch(0.95 0.01 120);
-  --primary: oklch(0.86 0.2 145);
-  --primary-foreground: oklch(0.16 0.03 150);
-  --secondary: oklch(0.26 0.02 160);
+  --primary: oklch(0.74 0.15 55);
+  --primary-foreground: oklch(0.18 0.03 50);
+  --secondary: oklch(0.27 0.03 50);
   --secondary-foreground: oklch(0.95 0.01 120);
-  --muted: oklch(0.24 0.015 160);
-  --muted-foreground: oklch(0.7 0.02 140);
-  --accent: oklch(0.8 0.13 75);
+  --muted: oklch(0.25 0.025 50);
+  --muted-foreground: oklch(0.74 0.03 70);
+  --accent: oklch(0.84 0.13 85);
   --accent-foreground: oklch(0.18 0.03 70);
   --destructive: oklch(0.65 0.2 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.32 0.02 160);
-  --input: oklch(0.32 0.02 160);
-  --ring: oklch(0.86 0.2 145);
-  --hud: oklch(0.88 0.22 145);
-  --lens: oklch(0.12 0.02 170 / 0.85);
-  --frame: oklch(0.1 0.005 160);
-  --tg: oklch(0.62 0.13 240);
-  --tg-bubble: oklch(0.3 0.04 240);
-  --tg-bg: oklch(0.2 0.025 245);
+  --border: oklch(0.33 0.03 50);
+  --input: oklch(0.33 0.03 50);
+  --ring: oklch(0.74 0.15 55);
+  --hud: oklch(0.88 0.14 75);
+  --lens: oklch(0.14 0.02 50 / 0.85);
+  --frame: oklch(0.12 0.01 50);
+  --tg: oklch(0.66 0.14 50);
+  --tg-bubble: oklch(0.29 0.035 50);
+  --tg-bg: oklch(0.2 0.025 45);
 }
 .dark{}
 @layer base {
@@ -124,3 +124,12 @@
 .hud-glow { text-shadow: 0 0 8px color-mix(in oklab, var(--hud) 70%, transparent); }
 @keyframes hud-in { from { opacity: 0; transform: translateY(6px); filter: blur(3px);} to {opacity:1; transform:none; filter:none;} }
 .hud-in { animation: hud-in .5s ease-out both; }
+
+@keyframes glasses-on { 0% { transform: translateY(-120%) scale(1.4); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes glasses-off { from { transform: none; opacity: 1; } to { transform: translateY(-120%) scale(1.4); opacity: 0; } }
+@keyframes lens-clear { from { backdrop-filter: blur(18px); background: color-mix(in oklab, var(--background) 70%, transparent);} to { backdrop-filter: blur(0); background: transparent; } }
+@keyframes lens-fog { from { backdrop-filter: blur(0); background: transparent;} to { backdrop-filter: blur(18px); background: var(--background); } }
+.glasses-on { animation: glasses-on 1.6s cubic-bezier(.2,.8,.2,1) both; }
+.glasses-off { animation: glasses-off 1.4s cubic-bezier(.6,0,.8,.2) both; }
+.lens-clear { animation: lens-clear 1.8s ease-out both; }
+.lens-fog { animation: lens-fog 1.4s ease-in both; }
