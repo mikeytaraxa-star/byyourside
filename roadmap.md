@@ -17,3 +17,5 @@
 - [x] Add official G2 tap, phone-location, and head-motion APIs through the Even Hub SDK.
 - [x] Add a no-hardware location and motion showcase with explicit simulation labels.
 - [x] Verify command, AI, sensor, routing, type, and browser flows; physical G2 verification is not required for this hackathon demo.
+
+- [ ] Connect Telegram bot (blocked: Telegram verification returned Service Unavailable; user to regenerate token and retry)
