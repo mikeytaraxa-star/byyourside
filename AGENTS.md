@@ -28,3 +28,5 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- Demo logic (command parsing, answers) lives in src/components/demo/engine.ts as pure functions so the real Telegram bot can reuse it.
