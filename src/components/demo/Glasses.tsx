@@ -1,40 +1,14 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import dailyLife from "@/assets/daily_life_loop.mp4.asset.json";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import dailyLife from "@/assets/daily_life_pov.mp4.asset.json";
 
-/** 3D model of Even G2 style glasses; HUD content shows in the lenses. */
+const G2Scene = lazy(() => import("./G2Scene"));
+
+/** Interactive 3D Even G2 model (client-only); the HUD sits in the upper-right of the right lens. */
 export function Glasses3D({ children }: { children: ReactNode }) {
-  const [rot, setRot] = useState({ x: -8, y: -18 });
-  return (
-    <div
-      className="flex h-full w-full items-center justify-center [perspective:1100px]"
-      onPointerMove={(e) => {
-        const b = e.currentTarget.getBoundingClientRect();
-        setRot({ x: ((e.clientY - b.top) / b.height - 0.5) * -25, y: ((e.clientX - b.left) / b.width - 0.5) * 45 });
-      }}
-      onPointerLeave={() => setRot({ x: -8, y: -18 })}
-    >
-      <div className="relative transition-transform duration-200 ease-out [transform-style:preserve-3d]" style={{ transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)` }}>
-        {/* temples */}
-        <div className="absolute left-0 top-6 h-3 w-64 origin-left rounded-full bg-frame shadow-lg" style={{ transform: "rotateY(90deg) translateZ(2px)" }} />
-        <div className="absolute right-0 top-6 h-3 w-64 origin-right rounded-full bg-frame shadow-lg" style={{ transform: "rotateY(-90deg) translateZ(2px)" }} />
-        <div className="flex items-center" style={{ transform: "translateZ(10px)" }}>
-          <Lens>{children}</Lens>
-          <div className="mx-1 h-3 w-8 rounded-t-full border-x-4 border-t-4 border-frame" />
-          <Lens>{children}</Lens>
-        </div>
-        <div className="absolute -bottom-10 left-1/2 h-6 w-[90%] -translate-x-1/2 rounded-full bg-frame/60 blur-xl" style={{ transform: "translateZ(-40px)" }} />
-      </div>
-    </div>
-  );
-}
-
-function Lens({ children }: { children: ReactNode }) {
-  return (
-    <div className="relative h-36 w-52 overflow-hidden rounded-[45%_45%_42%_42%/40%_40%_55%_55%] border-[7px] border-frame bg-lens shadow-[inset_0_0_30px_rgba(0,0,0,.6)] sm:h-40 sm:w-60">
-      <div className="absolute inset-0 bg-gradient-to-br from-foreground/15 via-transparent to-transparent" />
-      <div className="absolute inset-0 flex scale-[0.62] items-center justify-center">{children}</div>
-    </div>
-  );
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  if (!ready) return null;
+  return <Suspense fallback={null}><G2Scene hud={children} /></Suspense>;
 }
 
 /** First-person "through the glasses" view: looping daily-life video behind the HUD. */
@@ -43,7 +17,7 @@ export function ThroughView({ children, onFullscreen }: { children: ReactNode; o
     <div className="relative h-full w-full overflow-hidden rounded-2xl">
       <video src={dailyLife.url} autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,oklch(0.1_0.02_50/0.7))]" />
-      <div className="absolute inset-0 flex items-center justify-center">{children}</div>
+      <div className="absolute right-[6%] top-[7%] w-[44%] max-w-[340px]">{children}</div>
       {onFullscreen && (
         <button onClick={onFullscreen} className="absolute bottom-3 right-3 rounded-full bg-background/70 px-3 py-1.5 text-xs font-semibold text-foreground backdrop-blur hover:bg-primary hover:text-primary-foreground">⛶ Full screen</button>
       )}
@@ -73,13 +47,16 @@ export function GlassesFilm({ hud, onClose }: { hud: ReactNode; onClose: () => v
       <div className={`absolute inset-0 ${phase === "off" ? "lens-fog" : "lens-clear"}`} />
       <div className={`pointer-events-none absolute inset-0 ${phase === "off" ? "glasses-off" : "glasses-on"}`}>
         <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" className="h-full w-full text-frame">
-          <defs><mask id="lenses"><rect width="1600" height="900" fill="white" /><ellipse cx="440" cy="460" rx="350" ry="300" fill="black" /><ellipse cx="1160" cy="460" rx="350" ry="300" fill="black" /></mask></defs>
-          <rect width="1600" height="900" fill="currentColor" opacity="0.92" mask="url(#lenses)" />
-          <ellipse cx="440" cy="460" rx="350" ry="300" fill="none" stroke="currentColor" strokeWidth="34" />
-          <ellipse cx="1160" cy="460" rx="350" ry="300" fill="none" stroke="currentColor" strokeWidth="34" />
+          <defs><mask id="lenses"><rect width="1600" height="900" fill="white" /><path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="black" /><path d="M820,430 C820,250 950,175 1150,175 C1340,175 1480,215 1480,400 C1480,610 1330,730 1150,730 C960,730 820,610 820,430 Z" fill="black" /></mask></defs>
+          <rect width="1600" height="900" fill="currentColor" opacity="0.94" mask="url(#lenses)" />
+          <path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="none" stroke="currentColor" strokeWidth="38" />
+          <path d="M820,430 C820,250 950,175 1150,175 C1340,175 1480,215 1480,400 C1480,610 1330,730 1150,730 C960,730 820,610 820,430 Z" fill="none" stroke="currentColor" strokeWidth="38" />
+          <path d="M760,300 Q800,250 840,300" fill="none" stroke="currentColor" strokeWidth="34" />
+          <rect x="1440" y="250" width="160" height="70" rx="18" fill="currentColor" />
+          <rect x="0" y="250" width="160" height="70" rx="18" fill="currentColor" />
         </svg>
       </div>
-      {phase === "play" && <div className="absolute inset-x-0 top-[38%] flex justify-center">{hud}</div>}
+      {phase === "play" && <div className="hud-in absolute right-[12%] top-[24%] w-[min(24vw,340px)]">{hud}</div>}
       <button onClick={finish} className="absolute right-6 top-6 rounded-full bg-background/60 px-4 py-2 text-sm text-foreground backdrop-blur">Take glasses off ✕</button>
     </div>
   );
@@ -88,10 +65,10 @@ export function GlassesFilm({ hud, onClose }: { hud: ReactNode; onClose: () => v
 /** The 576x288 G2 display, rendered in green monochrome. */
 export function Hud({ title, body, footer, alert }: { title: string; body: string; footer?: string; alert?: boolean }) {
   return (
-    <div key={title + body} className="hud-in hud-glow flex aspect-[2/1] w-[min(92%,440px)] flex-col justify-between rounded-md p-4 font-mono text-hud">
-      <div className="flex justify-between text-xs opacity-80"><span>{alert ? "⚠ " : ""}{title}</span><span>BYYOURSIDE</span></div>
-      <div className="text-center text-2xl font-bold leading-tight sm:text-[1.7rem]">{body}</div>
-      <div className="text-center text-xs opacity-80">{footer}</div>
+    <div key={title + body} className="hud-in hud-glow flex aspect-[2/1] w-full flex-col justify-between rounded-xl bg-background/25 p-3 font-mono text-hud backdrop-blur-[2px]">
+      <div className="flex justify-between text-[10px] opacity-80"><span>{alert ? "⚠ " : ""}{title}</span><span>BYYOURSIDE</span></div>
+      <div className="text-center text-base font-bold leading-snug sm:text-lg">{body}</div>
+      <div className="text-center text-[10px] opacity-80">{footer}</div>
     </div>
   );
 }
