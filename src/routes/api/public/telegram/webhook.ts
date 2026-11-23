@@ -4,6 +4,7 @@ import { z } from "zod";
 import { parseCommand } from "@/components/demo/engine";
 import type { Json } from "@/integrations/supabase/types";
 import { isValidTimeZone, localClock, parseDone } from "@/lib/reminder-alerts";
+import { isPairCommand, newPairCode, PAIR_TTL_MINUTES } from "@/lib/pairing";
 
 const messageSchema = z
   .object({
@@ -121,7 +122,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         let reply = "";
         if (text === "/start" || text === "/help") {
           reply =
-            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nSet your time zone (for reminder alerts):\n/timezone Europe/Berlin\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
+            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nConnect the glasses:\n/pair\n\nSet your time zone (for reminder alerts):\n/timezone Europe/Berlin\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
         } else if (/^\/timezone(?:@\w+)?\s+/i.test(text)) {
           const tz = text.replace(/^\/timezone(?:@\w+)?\s+/i, "").trim();
           if (!isValidTimeZone(tz)) reply = "⚠️ I don't know that time zone. Try /timezone Europe/Berlin or /timezone America/New_York";
@@ -129,6 +130,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const { error } = await supabaseAdmin.from("care_circles").update({ timezone: tz }).eq("id", circle.id);
             reply = error ? `⚠️ I couldn't save the time zone: ${error.message}` : `🕰 Time zone set to ${tz}. Reminders and check-ins follow this clock.`;
           }
+        } else if (isPairCommand(text)) {
+          const code = newPairCode();
+          const { error } = await supabaseAdmin.from("pairing_codes").insert({ code, circle_id: circle.id, expires_at: new Date(Date.now() + PAIR_TTL_MINUTES * 60_000).toISOString() });
+          reply = error ? "⚠️ I couldn't create a code. Please send /pair again." : `👓 Your glasses code: ${code}\n\nOpen ByYourSide on the phone with the glasses and enter it once. It works for ${PAIR_TTL_MINUTES} minutes.`;
         } else if (parseDone(text)) {
           const wanted = parseDone(text)?.time ?? null;
           const { data: tzRow } = await supabaseAdmin.from("care_circles").select("timezone").eq("id", circle.id).single();

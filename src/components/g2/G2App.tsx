@@ -5,9 +5,11 @@ import { useEvenHub } from '@/hooks/use-even-hub';
 import { fmt, parseCommand, toMin, type Reminder } from '@/components/demo/engine';
 import type { Gesture, GestureSource } from '@/components/demo/gestures';
 import { latestUpdateQueue } from '@/lib/latest-update';
+import { isPairCode, SYNC_INTERVAL_MS, syncOrigin } from '@/lib/pairing';
 import { applyG2Gesture, dueSelection, emptySession, missedReminders, openingSelection, restoreSession, todayKey, MISSED_AFTER_MINUTES, type G2Session } from './session';
 
 const STORAGE_KEY = 'byyourside.g2.schedule.v1';
+const PAIR_KEY = 'byyourside.g2.pairing.v1';
 export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
   const [session, setSession] = useState<G2Session>(emptySession);
   const [ready, setReady] = useState(false);
@@ -20,6 +22,10 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
   const [audioBytes, setAudioBytes] = useState(0);
   const [lastInput, setLastInput] = useState('No input yet');
   const [nativeLoaded, setNativeLoaded] = useState(false);
+  const [pairToken, setPairToken] = useState<string | null>(null);
+  const [pairCode, setPairCode] = useState('');
+  const [syncState, setSyncState] = useState('');
+  const serverDone = useRef(new Set<string>());
   const gestureRef = useRef<(gesture: Gesture, source: GestureSource) => void>(() => {});
   const audioRevision = useRef(0);
   const audioTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,6 +51,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
     setNow(date);
     const openMinute = date.getHours() * 60 + date.getMinutes();
     try { setSession(openingSelection(restoreSession(localStorage.getItem(STORAGE_KEY) ?? ''), openMinute)); } catch { setNotice('Phone storage unavailable.'); }
+    try { setPairToken(localStorage.getItem(PAIR_KEY)); } catch { /* storage unavailable */ }
     setReady(true);
     let previousMinute = date.getHours() * 60 + date.getMinutes();
     const interval = setInterval(() => {
@@ -91,6 +98,50 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
     window.addEventListener('flutterInAppWebViewPlatformReady', start);
     return () => window.removeEventListener('flutterInAppWebViewPlatformReady', start);
   }, [ready, hub.connect]);
+
+
+  const api = useCallback(async (path: string, token: string | null, payload: unknown = {}) => {
+    const response = await fetch(`${syncOrigin(window.location)}/api/public/g2/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(payload) });
+    const data = await response.json().catch(() => ({})) as Record<string, unknown>;
+    return { status: response.status, data };
+  }, []);
+  const unpair = useCallback(() => { try { localStorage.removeItem(PAIR_KEY); } catch { /* ignore */ } serverDone.current.clear(); setPairToken(null); setSyncState(''); }, []);
+
+  useEffect(() => {
+    if (!pairToken) return;
+    let active = true;
+    const pull = async () => {
+      try {
+        const { status, data } = await api('sync', pairToken);
+        if (!active) return;
+        if (status === 401) { unpair(); setNotice('This phone was unpaired. Send /pair in Telegram for a new code.'); return; }
+        if (!Array.isArray(data['reminders'])) throw new Error();
+        const rows = data['reminders'] as Reminder[];
+        serverDone.current = new Set(rows.filter(r => r.status === 'done').map(r => r.id));
+        const d = new Date();
+        setSession(old => {
+          const keepDone = new Set(old.reminders.filter(r => r.status === 'done').map(r => r.id));
+          const reminders = rows.map(r => keepDone.has(r.id) ? { ...r, status: 'done' as const } : r);
+          const same = old.reminders.length === reminders.length && old.reminders.every((r, i) => r.id === reminders[i]?.id);
+          const next = { date: todayKey(d), sample: false, reminders, selected: same ? old.selected : 0 };
+          return same ? next : openingSelection(next, d.getHours() * 60 + d.getMinutes());
+        });
+        setSyncState(`Synced with Telegram · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+      } catch { if (active) setSyncState('Offline · showing saved reminders'); }
+    };
+    void pull();
+    const id = setInterval(() => void pull(), SYNC_INTERVAL_MS);
+    return () => { active = false; clearInterval(id); };
+  }, [pairToken, api, unpair]);
+
+  useEffect(() => {
+    if (!pairToken) return;
+    for (const row of session.reminders) {
+      if (row.status !== 'done' || serverDone.current.has(row.id)) continue;
+      serverDone.current.add(row.id);
+      void api('done', pairToken, { reminderId: row.id }).then(({ status }) => { if (status !== 200) serverDone.current.delete(row.id); }).catch(() => serverDone.current.delete(row.id));
+    }
+  }, [session, pairToken, api]);
 
   const stopRecording = useCallback(() => {
     audioRevision.current += 1;
@@ -152,6 +203,26 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
         <p className="mt-3 text-sm text-muted-foreground" role="status">{hub.message}</p>
         <p className="mt-2 text-xs text-muted-foreground">{connected ? lastInput : 'Even App 2.2.10+ required · No simulated hardware'}</p>
       </section>
+      <section className="border-b border-border py-6" aria-label="Telegram pairing">
+        <h2 className="font-semibold">Family Telegram</h2>
+        {pairToken ? (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground" role="status">{syncState || 'Paired · syncing…'}</p><Button variant="outline" onClick={unpair}>Unpair</Button></div>
+        ) : (
+          <form className="mt-3 flex flex-wrap items-end gap-2" onSubmit={async event => {
+            event.preventDefault();
+            if (!isPairCode(pairCode)) { setNotice('Enter the 6-digit code from Telegram.'); return; }
+            try {
+              const { status, data } = await api('pair', null, { code: pairCode.trim() });
+              if (status !== 200 || typeof data['token'] !== 'string') { setNotice(typeof data['error'] === 'string' ? data['error'] : 'Pairing failed.'); return; }
+              try { localStorage.setItem(PAIR_KEY, data['token']); } catch { /* keep for this session */ }
+              setPairCode(''); setPairToken(data['token']); setNotice('Paired with the family. Reminders now come from Telegram.');
+            } catch { setNotice('No internet connection. Try again.'); }
+          }}>
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">Send /pair to @bysappbot, then enter the code<input className="h-10 w-40 rounded-md border border-input bg-background px-3 text-lg tracking-widest text-foreground" aria-label="Pairing code" inputMode="numeric" maxLength={6} value={pairCode} onChange={event => setPairCode(event.target.value.replace(/\D/g, ''))} placeholder="000000" /></label>
+            <Button type="submit" disabled={pairCode.length !== 6}>Pair</Button>
+          </form>
+        )}
+      </section>
       <section className="border-b border-border py-6" aria-label="Current reminder">
         <div className="mb-4 flex items-center justify-between gap-4"><h2 className="font-semibold">Today</h2><time className="text-lg tabular-nums">{display.clock}</time></div>
         {session.sample && <p className="mb-3 text-xs font-semibold text-primary">SAMPLE SCHEDULE</p>}
@@ -191,7 +262,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
         <div className="flex flex-wrap items-center gap-3"><Button variant="outline" disabled={!connected || !voiceConsent} onClick={() => { if (recording) stopRecording(); else void beginRecording(); }}><Mic />{recording ? 'Stop microphone' : 'Test microphone'}</Button><span className="text-xs text-muted-foreground">{audioBytes > 0 ? `${audioBytes.toLocaleString()} bytes received · discarded` : 'Audio stays local · No speech recognition'}</span></div>
       </section>
       {notice && <p role="status" className="mt-4 text-sm text-primary">{notice}</p>}
-      <footer className="pt-6 text-xs leading-relaxed text-muted-foreground"><p>Telegram sync: not connected · Cocoon AI: not configured</p><p className="mt-2">Not a medical device or emergency service.</p></footer>
+      <footer className="pt-6 text-xs leading-relaxed text-muted-foreground"><p>Telegram sync: {pairToken ? 'paired' : 'not paired'} · Cocoon AI: not configured</p><p className="mt-2">Not a medical device or emergency service.</p></footer>
     </main>
   );
 }

@@ -14,6 +14,9 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as G2RouteImport } from './routes/g2'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ApiPublicG2DoneRouteImport } from './routes/api/public/g2/done'
+import { Route as ApiPublicG2PairRouteImport } from './routes/api/public/g2/pair'
+import { Route as ApiPublicG2SyncRouteImport } from './routes/api/public/g2/sync'
 import { Route as ApiPublicJobsReminderAlertsRouteImport } from './routes/api/public/jobs/reminder-alerts'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
@@ -42,6 +45,21 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicG2DoneRoute = ApiPublicG2DoneRouteImport.update({
+  id: '/api/public/g2/done',
+  path: '/api/public/g2/done',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicG2PairRoute = ApiPublicG2PairRouteImport.update({
+  id: '/api/public/g2/pair',
+  path: '/api/public/g2/pair',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicG2SyncRoute = ApiPublicG2SyncRouteImport.update({
+  id: '/api/public/g2/sync',
+  path: '/api/public/g2/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicJobsReminderAlertsRoute =
   ApiPublicJobsReminderAlertsRouteImport.update({
     id: '/api/public/jobs/reminder-alerts',
@@ -61,6 +79,9 @@ export interface FileRoutesByFullPath {
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
   '/terms': typeof TermsRoute
+  '/api/public/g2/done': typeof ApiPublicG2DoneRoute
+  '/api/public/g2/pair': typeof ApiPublicG2PairRoute
+  '/api/public/g2/sync': typeof ApiPublicG2SyncRoute
   '/api/public/jobs/reminder-alerts': typeof ApiPublicJobsReminderAlertsRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -70,6 +91,9 @@ export interface FileRoutesByTo {
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
   '/terms': typeof TermsRoute
+  '/api/public/g2/done': typeof ApiPublicG2DoneRoute
+  '/api/public/g2/pair': typeof ApiPublicG2PairRoute
+  '/api/public/g2/sync': typeof ApiPublicG2SyncRoute
   '/api/public/jobs/reminder-alerts': typeof ApiPublicJobsReminderAlertsRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -80,6 +104,9 @@ export interface FileRoutesById {
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
   '/terms': typeof TermsRoute
+  '/api/public/g2/done': typeof ApiPublicG2DoneRoute
+  '/api/public/g2/pair': typeof ApiPublicG2PairRoute
+  '/api/public/g2/sync': typeof ApiPublicG2SyncRoute
   '/api/public/jobs/reminder-alerts': typeof ApiPublicJobsReminderAlertsRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -91,6 +118,9 @@ export interface FileRouteTypes {
     | '/g2'
     | '/install'
     | '/terms'
+    | '/api/public/g2/done'
+    | '/api/public/g2/pair'
+    | '/api/public/g2/sync'
     | '/api/public/jobs/reminder-alerts'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -100,6 +130,9 @@ export interface FileRouteTypes {
     | '/g2'
     | '/install'
     | '/terms'
+    | '/api/public/g2/done'
+    | '/api/public/g2/pair'
+    | '/api/public/g2/sync'
     | '/api/public/jobs/reminder-alerts'
     | '/api/public/telegram/webhook'
   id:
@@ -109,6 +142,9 @@ export interface FileRouteTypes {
     | '/g2'
     | '/install'
     | '/terms'
+    | '/api/public/g2/done'
+    | '/api/public/g2/pair'
+    | '/api/public/g2/sync'
     | '/api/public/jobs/reminder-alerts'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
@@ -119,6 +155,9 @@ export interface RootRouteChildren {
   G2Route: typeof G2Route
   InstallRoute: typeof InstallRoute
   TermsRoute: typeof TermsRoute
+  ApiPublicG2DoneRoute: typeof ApiPublicG2DoneRoute
+  ApiPublicG2PairRoute: typeof ApiPublicG2PairRoute
+  ApiPublicG2SyncRoute: typeof ApiPublicG2SyncRoute
   ApiPublicJobsReminderAlertsRoute: typeof ApiPublicJobsReminderAlertsRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
@@ -160,6 +199,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/g2/done': {
+      id: '/api/public/g2/done'
+      path: '/api/public/g2/done'
+      fullPath: '/api/public/g2/done'
+      preLoaderRoute: typeof ApiPublicG2DoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/g2/pair': {
+      id: '/api/public/g2/pair'
+      path: '/api/public/g2/pair'
+      fullPath: '/api/public/g2/pair'
+      preLoaderRoute: typeof ApiPublicG2PairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/g2/sync': {
+      id: '/api/public/g2/sync'
+      path: '/api/public/g2/sync'
+      fullPath: '/api/public/g2/sync'
+      preLoaderRoute: typeof ApiPublicG2SyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/reminder-alerts': {
       id: '/api/public/jobs/reminder-alerts'
       path: '/api/public/jobs/reminder-alerts'
@@ -183,6 +243,9 @@ const rootRouteChildren: RootRouteChildren = {
   G2Route: G2Route,
   InstallRoute: InstallRoute,
   TermsRoute: TermsRoute,
+  ApiPublicG2DoneRoute: ApiPublicG2DoneRoute,
+  ApiPublicG2PairRoute: ApiPublicG2PairRoute,
+  ApiPublicG2SyncRoute: ApiPublicG2SyncRoute,
   ApiPublicJobsReminderAlertsRoute: ApiPublicJobsReminderAlertsRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }

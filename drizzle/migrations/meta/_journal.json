@@ -15,6 +15,13 @@
       "when": 1795472963046,
       "tag": "0001_reminder_backup_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795473245793,
+      "tag": "0002_g2_pairing",
+      "breakpoints": true
     }
   ]
 }

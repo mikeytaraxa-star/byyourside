@@ -38,6 +38,70 @@ export type Database = {
         }
         Relationships: []
       }
+      g2_devices: {
+        Row: {
+          circle_id: string
+          created_at: string
+          id: string
+          last_seen_at: string | null
+          token_hash: string
+        }
+        Insert: {
+          circle_id: string
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          token_hash: string
+        }
+        Update: {
+          circle_id?: string
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "g2_devices_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "care_circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pairing_codes: {
+        Row: {
+          circle_id: string
+          code: string
+          created_at: string
+          expires_at: string
+          used_at: string | null
+        }
+        Insert: {
+          circle_id: string
+          code: string
+          created_at?: string
+          expires_at: string
+          used_at?: string | null
+        }
+        Update: {
+          circle_id?: string
+          code?: string
+          created_at?: string
+          expires_at?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pairing_codes_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "care_circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       people: {
         Row: {
           circle_id: string
