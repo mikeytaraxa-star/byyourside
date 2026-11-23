@@ -1,7 +1,5 @@
 import {
   Activity,
-  Bot,
-  BrainCircuit,
   Glasses,
   LoaderCircle,
   MapPin,
@@ -9,6 +7,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useRef, type ReactNode } from "react";
+import { CocoonIcon, TelegramIcon } from "./BrandIcons";
 import type { EvenHubController } from "@/hooks/use-even-hub";
 
 export function IntegrationPanel({
@@ -86,7 +85,7 @@ export function IntegrationPanel({
 
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <IntegrationCard
-            icon={<Bot className="h-5 w-5" />}
+            icon={<TelegramIcon />}
             title="Telegram"
             status="Ready to link"
           >
@@ -107,7 +106,7 @@ export function IntegrationPanel({
           </IntegrationCard>
 
           <IntegrationCard
-            icon={<BrainCircuit className="h-5 w-5" />}
+            icon={<CocoonIcon />}
             title="Cocoon AI"
             status="Demo + live adapter"
           >
