@@ -100,7 +100,7 @@ function Index() {
     <main className="min-h-screen bg-background text-foreground">
       <header className="mx-auto flex max-w-7xl flex-col items-center px-5 pb-6 pt-10 text-center">
         <Logo3D src={logo.url} />
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">ByYourSide · Even Realities G2 · Telegram · TON Cocoon</p>
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">BYYOURSIDE</p>
         <h1 className="mt-3 max-w-4xl font-display text-4xl font-bold leading-[1.05] sm:text-6xl">
           Family remembers <span className="text-primary">for</span> Your Loved One — right in front of their eyes.
         </h1>
