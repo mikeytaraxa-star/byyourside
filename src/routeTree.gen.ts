@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BreakdownRouteImport } from './routes/breakdown'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as G2RouteImport } from './routes/g2'
 import { Route as InstallRouteImport } from './routes/install'
@@ -23,6 +24,11 @@ import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/publi
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BreakdownRoute = BreakdownRouteImport.update({
+  id: '/breakdown',
+  path: '/breakdown',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsRoute = DocsRouteImport.update({
@@ -75,6 +81,7 @@ const ApiPublicTelegramWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/breakdown': typeof BreakdownRoute
   '/docs': typeof DocsRoute
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/breakdown': typeof BreakdownRoute
   '/docs': typeof DocsRoute
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
@@ -100,6 +108,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/breakdown': typeof BreakdownRoute
   '/docs': typeof DocsRoute
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/breakdown'
     | '/docs'
     | '/g2'
     | '/install'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/breakdown'
     | '/docs'
     | '/g2'
     | '/install'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/breakdown'
     | '/docs'
     | '/g2'
     | '/install'
@@ -151,6 +163,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BreakdownRoute: typeof BreakdownRoute
   DocsRoute: typeof DocsRoute
   G2Route: typeof G2Route
   InstallRoute: typeof InstallRoute
@@ -169,6 +182,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/breakdown': {
+      id: '/breakdown'
+      path: '/breakdown'
+      fullPath: '/breakdown'
+      preLoaderRoute: typeof BreakdownRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs': {
@@ -239,6 +259,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BreakdownRoute: BreakdownRoute,
   DocsRoute: DocsRoute,
   G2Route: G2Route,
   InstallRoute: InstallRoute,
