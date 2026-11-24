@@ -1,5 +1,7 @@
 # ByYourSide live integrations
 
+- [ ] Produce a three-minute hackathon demo video with male narration, the founder's real motivation, existing motion-design reference, and honest integration-status labels.
+
 - [x] Build a dedicated native G2 app with device-only connection, local reminders, shared gesture handling, and safe lifecycle cleanup.
 - [x] Produce and validate an official Even Hub installation package and hardware setup instructions.
 - [x] Verify native bridge flows with an instrumented bridge and phone/desktop-sized browser, including the offline package entry.
