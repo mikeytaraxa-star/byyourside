@@ -51,7 +51,7 @@ bunx evenhub qr --url http://YOUR-LAN-IP:8000
 - Swipe up/down: next/previous reminder. Paired R1 uses the same event handler as G2 temple input.
 - Double tap / menu **Today**: returns to the earliest due reminder, or the next pending item.
 - Long press / release: captures G2 microphone PCM only after explicit local consent; release discards audio. The **Ask a question** menu toggles this same local capture. There is no transcription or inferred answer. Capture stops automatically after 12 seconds, on navigation, or on exit.
-- Location/motion: off by default in the hardware app. The switch requests phone location and G2 IMU updates through Even App. Values stay local; no fall detection, geofencing, or emergency monitoring is implemented.
+- Location/motion: off by default in the hardware app. The switch requests phone location and G2 IMU updates through Even App. Motion stays local. When paired and “Phone location” is on, the last location is sent with each sync so the family can use `/findme` in Telegram; otherwise location stays local. No fall detection, geofencing, or emergency monitoring is implemented.
 
 Native display uses a 576 × 288 coordinate space, three nonoverlapping text containers, bounded text, and a latest-value serialized write queue. Long reminder content is truncated **only on the glasses**; full content remains available on the phone. G2 is monochrome, so website colors/3D imagery are not sent to the device.
 
