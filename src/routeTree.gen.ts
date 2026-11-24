@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BreakdownRouteImport } from './routes/breakdown'
+import { Route as DemovideoRouteImport } from './routes/demovideo'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as G2RouteImport } from './routes/g2'
 import { Route as InstallRouteImport } from './routes/install'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const BreakdownRoute = BreakdownRouteImport.update({
   id: '/breakdown',
   path: '/breakdown',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemovideoRoute = DemovideoRouteImport.update({
+  id: '/demovideo',
+  path: '/demovideo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsRoute = DocsRouteImport.update({
@@ -82,6 +88,7 @@ const ApiPublicTelegramWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/breakdown': typeof BreakdownRoute
+  '/demovideo': typeof DemovideoRoute
   '/docs': typeof DocsRoute
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/breakdown': typeof BreakdownRoute
+  '/demovideo': typeof DemovideoRoute
   '/docs': typeof DocsRoute
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/breakdown': typeof BreakdownRoute
+  '/demovideo': typeof DemovideoRoute
   '/docs': typeof DocsRoute
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/breakdown'
+    | '/demovideo'
     | '/docs'
     | '/g2'
     | '/install'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/breakdown'
+    | '/demovideo'
     | '/docs'
     | '/g2'
     | '/install'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/breakdown'
+    | '/demovideo'
     | '/docs'
     | '/g2'
     | '/install'
@@ -164,6 +176,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BreakdownRoute: typeof BreakdownRoute
+  DemovideoRoute: typeof DemovideoRoute
   DocsRoute: typeof DocsRoute
   G2Route: typeof G2Route
   InstallRoute: typeof InstallRoute
@@ -189,6 +202,13 @@ declare module '@tanstack/react-router' {
       path: '/breakdown'
       fullPath: '/breakdown'
       preLoaderRoute: typeof BreakdownRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demovideo': {
+      id: '/demovideo'
+      path: '/demovideo'
+      fullPath: '/demovideo'
+      preLoaderRoute: typeof DemovideoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs': {
@@ -260,6 +280,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BreakdownRoute: BreakdownRoute,
+  DemovideoRoute: DemovideoRoute,
   DocsRoute: DocsRoute,
   G2Route: G2Route,
   InstallRoute: InstallRoute,
