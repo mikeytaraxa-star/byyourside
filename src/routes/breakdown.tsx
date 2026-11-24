@@ -1,3 +1,4 @@
+import demoVideo from "@/assets/videos/byyourside_demo.mp4.asset.json";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import logo from "@/assets/byyourside_heart_hand_logo.svg.asset.json";
 import { SiteFooter } from "@/components/site/SiteFooter";
@@ -30,6 +31,7 @@ function Breakdown() {
       <main className="mx-auto max-w-4xl px-4 pb-8 pt-4">
         <h1 className="font-display text-4xl font-bold">Project breakdown</h1>
         <p className="mt-3 text-muted-foreground">{DESC}</p>
+        <video src={demoVideo.url} controls playsInline preload="metadata" className="mt-8 aspect-video w-full rounded-lg bg-card shadow-2xl ring-1 ring-border" aria-label="ByYourSide demo video" />
         <div className="mt-8 space-y-6">
           {Array.from({ length: PAGES }, (_, i) => (
             <img key={i} src={`/breakdown/page-${i + 1}.webp`} alt={`Breakdown page ${i + 1} of ${PAGES}`} loading={i === 0 ? "eager" : "lazy"} width={1075} height={1520} className="h-auto w-full rounded-lg shadow-2xl ring-1 ring-border" />
