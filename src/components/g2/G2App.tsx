@@ -105,6 +105,8 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
     const data = await response.json().catch(() => ({})) as Record<string, unknown>;
     return { status: response.status, data };
   }, []);
+  const locationRef = useRef(hub.location);
+  locationRef.current = hub.location;
   const unpair = useCallback(() => { try { localStorage.removeItem(PAIR_KEY); } catch { /* ignore */ } serverDone.current.clear(); setPairToken(null); setSyncState(''); }, []);
 
   useEffect(() => {
@@ -112,7 +114,8 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
     let active = true;
     const pull = async () => {
       try {
-        const { status, data } = await api('sync', pairToken);
+        const where = locationRef.current;
+        const { status, data } = await api('sync', pairToken, where ? { location: where } : {});
         if (!active) return;
         if (status === 401) { unpair(); setNotice('This phone was unpaired. Send /pair in Telegram for a new code.'); return; }
         if (!Array.isArray(data['reminders'])) throw new Error();
@@ -255,7 +258,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
         {!session.reminders.length && <Button variant="link" className="mt-3 px-0" disabled={!ready} onClick={() => setSession({ date: todayKey(), sample: true, selected: 0, reminders: [{ id: 'sample-water', time: fmt(minute), text: 'Have a glass of water', status: 'pending' }, { id: 'sample-walk', time: fmt((minute + 30) % 1440), text: 'A gentle walk with Anna', status: 'pending' }] })}>Load sample schedule</Button>}
       </section>
       <section className="space-y-4 border-b border-border py-6" aria-label="Privacy and sensors">
-        <label className="flex items-center justify-between gap-4 text-sm"><span>Phone location &amp; head motion</span><input type="checkbox" aria-label="Enable location and motion" className="h-5 w-5 accent-primary" checked={hub.sensorsActive} disabled={!connected} onChange={event => void hub.setSensors(event.target.checked).catch(() => setNotice('Sensor permission is unavailable.'))} /></label>
+        <label className="flex items-center justify-between gap-4 text-sm"><span>Phone location &amp; head motion<span className="block text-xs text-muted-foreground">When paired, family can see it with /findme</span></span><input type="checkbox" aria-label="Enable location and motion" className="h-5 w-5 accent-primary" checked={hub.sensorsActive} disabled={!connected} onChange={event => void hub.setSensors(event.target.checked).catch(() => setNotice('Sensor permission is unavailable.'))} /></label>
         {hub.location && <p className="text-xs text-muted-foreground">Phone GPS · {hub.location.latitude.toFixed(4)}, {hub.location.longitude.toFixed(4)}{hub.location.accuracy ? ` · ±${Math.round(hub.location.accuracy)} m` : ''}</p>}
         {hub.motion && <p className="text-xs text-muted-foreground">Head motion · {hub.motion.x.toFixed(2)} / {hub.motion.y.toFixed(2)} / {hub.motion.z.toFixed(2)}</p>}
         <label className="flex items-center justify-between gap-4 text-sm"><span>Allow local G2 microphone</span><input type="checkbox" aria-label="Allow local G2 microphone" className="h-5 w-5 accent-primary" checked={voiceConsent} onChange={event => { setVoiceConsent(event.target.checked); if (!event.target.checked) stopRecording(); }} /></label>

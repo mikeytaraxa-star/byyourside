@@ -19,6 +19,14 @@ Bot: <https://t.me/bysappbot>
 - **After 15 minutes unconfirmed** — one alert per reminder per day, e.g. "Blue pill not confirmed yet".
 - **On glasses tap** — "✅ done" is posted to the family chat.
 
+## /findme
+
+- Works when the glasses app is paired and **Phone location** is switched on (opt-in).
+- While open, the glasses app shares its location with each minute sync; nothing is sent when the toggle is off.
+- `/findme` replies with a map card (Telegram venue) showing how old the location is and its accuracy, plus a maps link.
+- If the last location is older than 10 minutes, the next sync with a location sends a fresh map card automatically.
+- It is a convenience feature, not an emergency service.
+
 ## Setup
 
 1. Create the bot with @BotFather and connect it through the app's secure Telegram connection (never paste the token into code or chat).

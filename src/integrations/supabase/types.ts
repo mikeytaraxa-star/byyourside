@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string
+          findme_requested_at: string | null
           id: string
           telegram_chat_id: number
           timezone: string
@@ -25,6 +26,7 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string
+          findme_requested_at?: string | null
           id?: string
           telegram_chat_id: number
           timezone?: string
@@ -32,6 +34,7 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string
+          findme_requested_at?: string | null
           id?: string
           telegram_chat_id?: number
           timezone?: string
@@ -43,6 +46,10 @@ export type Database = {
           circle_id: string
           created_at: string
           id: string
+          last_accuracy: number | null
+          last_lat: number | null
+          last_lng: number | null
+          last_location_at: string | null
           last_seen_at: string | null
           token_hash: string
         }
@@ -50,6 +57,10 @@ export type Database = {
           circle_id: string
           created_at?: string
           id?: string
+          last_accuracy?: number | null
+          last_lat?: number | null
+          last_lng?: number | null
+          last_location_at?: string | null
           last_seen_at?: string | null
           token_hash: string
         }
@@ -57,6 +68,10 @@ export type Database = {
           circle_id?: string
           created_at?: string
           id?: string
+          last_accuracy?: number | null
+          last_lat?: number | null
+          last_lng?: number | null
+          last_location_at?: string | null
           last_seen_at?: string | null
           token_hash?: string
         }

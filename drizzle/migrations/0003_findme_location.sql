@@ -1,0 +1,2 @@
+ALTER TABLE public.g2_devices ADD COLUMN IF NOT EXISTS last_lat double precision, ADD COLUMN IF NOT EXISTS last_lng double precision, ADD COLUMN IF NOT EXISTS last_accuracy double precision, ADD COLUMN IF NOT EXISTS last_location_at timestamptz;
+ALTER TABLE public.care_circles ADD COLUMN IF NOT EXISTS findme_requested_at timestamptz;

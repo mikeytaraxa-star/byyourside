@@ -5,6 +5,7 @@ import { parseCommand } from "@/components/demo/engine";
 import type { Json } from "@/integrations/supabase/types";
 import { isValidTimeZone, localClock, parseDone } from "@/lib/reminder-alerts";
 import { isPairCommand, newPairCode, PAIR_TTL_MINUTES } from "@/lib/pairing";
+import { ageLabel, isFindMeCommand, isFresh, mapsLink, venueBody } from "@/lib/findme";
 
 const messageSchema = z
   .object({
@@ -122,13 +123,27 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         let reply = "";
         if (text === "/start" || text === "/help") {
           reply =
-            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nConnect the glasses:\n/pair\n\nSet your time zone (for reminder alerts):\n/timezone Europe/Berlin\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
+            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nConnect the glasses:\n/pair\n\nFind Your Loved One (glasses location):\n/findme\n\nSet your time zone (for reminder alerts):\n/timezone Europe/Berlin\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
         } else if (/^\/timezone(?:@\w+)?\s+/i.test(text)) {
           const tz = text.replace(/^\/timezone(?:@\w+)?\s+/i, "").trim();
           if (!isValidTimeZone(tz)) reply = "⚠️ I don't know that time zone. Try /timezone Europe/Berlin or /timezone America/New_York";
           else {
             const { error } = await supabaseAdmin.from("care_circles").update({ timezone: tz }).eq("id", circle.id);
             reply = error ? `⚠️ I couldn't save the time zone: ${error.message}` : `🕰 Time zone set to ${tz}. Reminders and check-ins follow this clock.`;
+          }
+        } else if (isFindMeCommand(text)) {
+          const now = new Date();
+          await supabaseAdmin.from("care_circles").update({ findme_requested_at: now.toISOString() }).eq("id", circle.id);
+          const { data: dev } = await supabaseAdmin.from("g2_devices").select("last_lat, last_lng, last_accuracy, last_location_at").eq("circle_id", circle.id).not("last_location_at", "is", null).order("last_location_at", { ascending: false }).limit(1).maybeSingle();
+          if (!dev || dev.last_lat == null || dev.last_lng == null || !dev.last_location_at) {
+            reply = "📍 No location has been shared yet.\n\nOn the phone with the glasses, open ByYourSide and turn on “Phone location”. I'll send the map here as soon as it arrives.";
+          } else {
+            const loc = { lat: dev.last_lat, lng: dev.last_lng, accuracy: dev.last_accuracy, at: dev.last_location_at };
+            const { telegramCall } = await import("@/lib/g2-sync.server");
+            await telegramCall("sendVenue", venueBody(chatId, loc, now));
+            reply = isFresh(loc.at, now)
+              ? `📍 Last seen ${ageLabel(loc.at, now)}. Open in maps: ${mapsLink(loc)}\n\nI'll send a fresh update the next time the glasses check in. If this is an emergency, call your local emergency number.`
+              : `📍 This location is from ${ageLabel(loc.at, now)}. I've asked the glasses for a fresh one; it arrives within a minute while the app is open.\nMaps: ${mapsLink(loc)}\n\nIf this is an emergency, call your local emergency number.`;
           }
         } else if (isPairCommand(text)) {
           const code = newPairCode();
