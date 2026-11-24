@@ -104,6 +104,21 @@ Care data is stored in private tables with no anonymous access, Telegram updates
 
 TanStack Start (React 19, Vite), Tailwind CSS v4, Three.js / React Three Fiber, Even Hub SDK, Postgres with row-level security, Vitest.
 
+## Hackathon declaration
+
+**Built during the hackathon.** Our team (1–4 people) built ByYourSide during the Even Realities hackathon, 23–29 November 2026. The repository history starts on 23 November 2026; every commit is from the hackathon period.
+
+**Code that existed before (disclosure).** The only pre-existing code is:
+
+- The standard Lovable TanStack Start starter template (first commit, `template: tanstack_start_ts…`) — project setup, build configuration and generic UI components under `src/components/ui/`.
+- Open-source packages installed from npm (listed in `package.json`), including the official Even Realities Even Hub SDK, React, TanStack, Three.js and Tailwind CSS, each under its own licence.
+
+All product code — the reminder engine, Telegram bot, pairing and sync, Cocoon adapter, G2 companion app, 3D glasses, film cues, branding and docs — was written during the hackathon. The logo, background texture and demo film were created during the hackathon with generative tools.
+
+**Terms of service and privacy.** The project uses only official, documented interfaces: the Telegram Bot API, the Even Hub SDK and Cocoon's OpenAI-compatible client. It sends no unsolicited messages and contacts only the chats that start the bot. All people, names, addresses and conversations shown in the demo (e.g. "Anna", "128 Willow Lane") are fictional; no real user's messages are shown. See [docs/privacy-security.md](docs/privacy-security.md).
+
+**Promotion consent.** We approve that the organizers may feature the project name, video and screenshots in hackathon communications.
+
 ## Built for
 
 The Even Realities hackathon on DoraHacks — Telegram, crypto (TON) and AI assistant track.
