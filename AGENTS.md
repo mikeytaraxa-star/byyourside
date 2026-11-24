@@ -43,3 +43,4 @@ use the editor.
 - Native G2 display regions and text limits live in g2-display.ts; validate SDK containers and keep the clock aligned with the reminder heading and the action in its own bottom region.
 - Fullscreen film cues use media currentTime and a pure scene map, not wall-clock timers or scene recognition; keep scripted samples separate from live reminders and native G2 writes.
 - Brand artwork ships as a vector traced from the approved raster mark; keep public/favicon.png (copied into the Even Hub package) and public/favicon.svg derived from the same mark so web and hardware show one logo.
+- Keep the judge-facing narrated film on its own /demovideo route with CDN asset pointers and native video controls so the shareable page stays lightweight and playback remains user-controlled.

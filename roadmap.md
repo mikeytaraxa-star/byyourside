@@ -1,5 +1,7 @@
 # ByYourSide live integrations
 
+- [x] Add and verify a shareable /demovideo page for the narrated hackathon film, linked from site navigation; desktop/mobile playback, seeking and navigation checked.
+
 - [x] Render a three-minute hackathon demo draft with male narration, the founder's real motivation, existing motion-design reference, and honest integration-status labels; file and still-frame checks complete, playback/listening review pending.
 
 - [x] Build a dedicated native G2 app with device-only connection, local reminders, shared gesture handling, and safe lifecycle cleanup.

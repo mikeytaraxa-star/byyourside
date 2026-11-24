@@ -11,6 +11,7 @@ export function SiteFooter() {
         <nav className="flex flex-wrap gap-x-6 gap-y-2">
           <Link to="/install" className="hover:text-primary">Install & how to use</Link>
           <Link to="/docs" className="hover:text-primary">Docs</Link>
+          <Link to="/demovideo" className="hover:text-primary">Demo video</Link>
           <Link to="/breakdown" className="hover:text-primary">Project breakdown</Link>
           <Link to="/terms" className="hover:text-primary">Terms of Service</Link>
         </nav>
