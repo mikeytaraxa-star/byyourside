@@ -4,7 +4,7 @@ import { z } from "zod";
 import { parseCommand } from "@/components/demo/engine";
 import type { Json } from "@/integrations/supabase/types";
 import { isValidTimeZone, localClock, parseDone } from "@/lib/reminder-alerts";
-import { isPairCommand, newPairCode, PAIR_TTL_MINUTES } from "@/lib/pairing";
+import { formatPairCode, isPairCommand, newPairCode, PAIR_TTL_MINUTES } from "@/lib/pairing";
 import { ageLabel, isFindMeCommand, isFresh, mapsLink, venueBody } from "@/lib/findme";
 
 const messageSchema = z
@@ -148,7 +148,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         } else if (isPairCommand(text)) {
           const code = newPairCode();
           const { error } = await supabaseAdmin.from("pairing_codes").insert({ code, circle_id: circle.id, expires_at: new Date(Date.now() + PAIR_TTL_MINUTES * 60_000).toISOString() });
-          reply = error ? "⚠️ I couldn't create a code. Please send /pair again." : `👓 Your glasses code: ${code}\n\nOpen ByYourSide on the phone with the glasses and enter it once. It works for ${PAIR_TTL_MINUTES} minutes.`;
+          reply = error ? "⚠️ I couldn't create a code. Please send /pair again." : `👓 Your glasses code: ${formatPairCode(code)}\n\nEnter it once in the ByYourSide app on the phone connected to the glasses. It works for ${PAIR_TTL_MINUTES} minutes and only once.\n\n🔒 Never share this code. ByYourSide will never ask you for it, and anyone who has it could see your family's reminders. If someone asks for it, it's a scam.`;
         } else if (parseDone(text)) {
           const wanted = parseDone(text)?.time ?? null;
           const { data: tzRow } = await supabaseAdmin.from("care_circles").select("timezone").eq("id", circle.id).single();

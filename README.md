@@ -32,7 +32,7 @@ ByYourSide puts one short, warm prompt in the corner of the wearer's view, at th
 | Your Loved One | Even Realities G2 glasses (+ optional R1 ring) | See one prompt at a time; tap to confirm, swipe to browse, hold to ask a question. |
 
 1. **Add** — `/remind 08:00 Take the blue pill from the table`, `/person Anna | daughter | lives in New York`.
-2. **Pair** — `/pair` returns a single-use six-digit code (valid 15 minutes) that is entered once in the glasses app.
+2. **Pair** — `/pair` returns a single-use 10-character code (valid 15 minutes) that is entered once in the glasses app.
 3. **Remind** — while open, the glasses app syncs every minute and shows the prompt when due. Reminders are cached on the phone for offline use.
 4. **Confirm** — one tap marks it done; the family receives "✅ done" in Telegram.
 5. **Find me** — `/findme` sends the glasses' last shared location to the family as a Telegram map card (opt-in).

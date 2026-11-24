@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { hashToken, isPairCode, pairCodeExpired } from '@/lib/pairing';
+import { hashToken, isPairCode, normalizePairCode, pairCodeExpired } from '@/lib/pairing';
 import { json, preflight } from '@/lib/g2-sync.server';
 
-const body = z.object({ code: z.string().max(12) });
+const body = z.object({ code: z.string().max(20) });
 
 export const Route = createFileRoute('/api/public/g2/pair')({
   server: {
@@ -11,8 +11,8 @@ export const Route = createFileRoute('/api/public/g2/pair')({
       OPTIONS: async () => preflight(),
       POST: async ({ request }) => {
         const parsed = body.safeParse(await request.json().catch(() => null));
-        const code = parsed.success ? parsed.data.code.trim() : '';
-        if (!isPairCode(code)) return json({ ok: false, error: 'Enter the 6-digit code from Telegram.' }, 400);
+        const code = parsed.success ? normalizePairCode(parsed.data.code) : '';
+        if (!isPairCode(code)) return json({ ok: false, error: 'Enter the 10-character code from Telegram.' }, 400);
         const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
         const { data: row } = await supabaseAdmin.from('pairing_codes').select('code, circle_id, expires_at, used_at').eq('code', code).maybeSingle();
         if (!row || row.used_at || pairCodeExpired(row.expires_at)) return json({ ok: false, error: 'That code is wrong or expired. Send /pair again.' }, 400);

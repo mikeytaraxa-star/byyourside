@@ -25,7 +25,7 @@
 | Telegram webhook | `src/routes/api/public/telegram/webhook.ts` | Verifies Telegram's secret-token header before reading the update. |
 | Reminder alerts | `src/lib/reminder-alerts.ts`, `api/public/jobs/reminder-alerts.ts` | Due-time nudge, one family alert after 15 minutes, per care-circle time zone. |
 | Find me | `src/lib/findme.ts`, telegram webhook, `api/public/g2/sync` | `/findme` returns the last synced location as a Telegram map card; stale locations are refreshed on the next glasses sync. |
-| Pairing & sync | `src/lib/pairing.ts`, `src/lib/g2-sync.server.ts`, `api/public/g2/*` | One-time six-digit code → revocable device token; minute sync; tap completion. |
+| Pairing & sync | `src/lib/pairing.ts`, `src/lib/g2-sync.server.ts`, `api/public/g2/*` | One-time 10-character code → revocable device token; minute sync; tap completion. |
 | Cocoon adapter | `src/lib/cocoon.server.ts` | Server-only, OpenAI-compatible; labelled demo answers when unconfigured. |
 | G2 companion | `src/components/g2/`, `g2/` | Shared by `/g2` and the packaged `.ehpk`; browser-safe, no bundled credentials. |
 | Display rules | `src/lib/g2-display.ts` | Native regions and text limits; validated before every write. |

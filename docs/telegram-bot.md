@@ -11,7 +11,7 @@ Bot: <https://t.me/bysappbot>
 | `/ask question` | `/ask Who is Anna?` | Answer grounded in the care circle (Cocoon, or labelled demo). |
 | `/done HH:MM` | `/done 08:00` | Marks today's reminder done and stops the alert. |
 | `/timezone Area/City` | `/timezone Europe/Berlin` | Sets the care circle's time zone. |
-| `/pair` | `/pair` | Issues a single-use six-digit code for the glasses app (15 minutes). |
+| `/pair` | `/pair` | Issues a single-use 10-character code for the glasses app (15 minutes). |
 
 ## Notifications
 

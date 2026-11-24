@@ -213,7 +213,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
         ) : (
           <form className="mt-3 flex flex-wrap items-end gap-2" onSubmit={async event => {
             event.preventDefault();
-            if (!isPairCode(pairCode)) { setNotice('Enter the 6-digit code from Telegram.'); return; }
+            if (!isPairCode(pairCode)) { setNotice('Enter the 10-character code from Telegram.'); return; }
             try {
               const { status, data } = await api('pair', null, { code: pairCode.trim() });
               if (status !== 200 || typeof data['token'] !== 'string') { setNotice(typeof data['error'] === 'string' ? data['error'] : 'Pairing failed.'); return; }
@@ -221,8 +221,8 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
               setPairCode(''); setPairToken(data['token']); setNotice('Paired with the family. Reminders now come from Telegram.');
             } catch { setNotice('No internet connection. Try again.'); }
           }}>
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">Send /pair to @bysappbot, then enter the code<input className="h-10 w-40 rounded-md border border-input bg-background px-3 text-lg tracking-widest text-foreground" aria-label="Pairing code" inputMode="numeric" maxLength={6} value={pairCode} onChange={event => setPairCode(event.target.value.replace(/\D/g, ''))} placeholder="000000" /></label>
-            <Button type="submit" disabled={pairCode.length !== 6}>Pair</Button>
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">Send /pair to @bysappbot, then enter the code<input className="h-10 w-48 rounded-md border border-input bg-background px-3 text-lg tracking-widest text-foreground" aria-label="Pairing code" autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={11} value={pairCode} onChange={event => setPairCode(event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))} placeholder="ABCDE-FGHJK" /></label>
+            <Button type="submit" disabled={!isPairCode(pairCode)}>Pair</Button>
           </form>
         )}
       </section>
