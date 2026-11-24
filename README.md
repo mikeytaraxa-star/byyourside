@@ -106,7 +106,7 @@ TanStack Start (React 19, Vite), Tailwind CSS v4, Three.js / React Three Fiber, 
 
 ## Hackathon declaration
 
-**Built during the hackathon.** Our team (1–4 people) built ByYourSide during the Even Realities hackathon, 23–29 November 2026. The repository history starts on 23 November 2026; every commit is from the hackathon period.
+**Built during the hackathon.** ByYourSide was built by a solo developer (a team of one) during the Even Realities hackathon, 23–29 November 2026. The repository history starts on 23 November 2026; every commit is from the hackathon period.
 
 **Code that existed before (disclosure).** The only pre-existing code is:
 
@@ -117,7 +117,7 @@ All product code — the reminder engine, Telegram bot, pairing and sync, Cocoon
 
 **Terms of service and privacy.** The project uses only official, documented interfaces: the Telegram Bot API, the Even Hub SDK and Cocoon's OpenAI-compatible client. It sends no unsolicited messages and contacts only the chats that start the bot. All people, names, addresses and conversations shown in the demo (e.g. "Anna", "128 Willow Lane") are fictional; no real user's messages are shown. See [docs/privacy-security.md](docs/privacy-security.md).
 
-**Promotion consent.** We approve that the organizers may feature the project name, video and screenshots in hackathon communications.
+**Promotion consent.** I approve that the organizers may feature the project name, video and screenshots in hackathon communications.
 
 ## Built for
 
