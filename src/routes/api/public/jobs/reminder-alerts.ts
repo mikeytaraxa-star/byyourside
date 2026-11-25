@@ -38,7 +38,8 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
           const { data: reminders } = await supabaseAdmin.from("reminders")
             .select("id, local_time, title, detail, nudged_on, alerted_on, confirmed_on, critical, missed_streak, last_missed_on").eq("circle_id", circle.id).limit(50);
           for (const action of alertActions(reminders ?? [], date, minute)) {
-            if (!await send(circle.telegram_chat_id, action.text)) continue;
+            // Claim the reminder first so overlapping runs can never send the same message twice.
+            const previous = (reminders ?? []).find((r) => r.id === action.id);
             const delivered = action.kind === "nudge"
               ? { nudged_on: date }
               : {
@@ -46,12 +47,25 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
                   nudged_on: date,
                   ...(action.missedStreak === undefined ? {} : { missed_streak: action.missedStreak, last_missed_on: date }),
                 };
-            await supabaseAdmin.from("reminders").update(delivered).eq("id", action.id);
+            const column = action.kind === "nudge" ? "nudged_on" : "alerted_on";
+            const { data: claimed } = await supabaseAdmin.from("reminders").update(delivered)
+              .eq("id", action.id).or(`${column}.is.null,${column}.neq.${date}`).select("id");
+            if (!claimed?.length) continue;
+            if (!await send(circle.telegram_chat_id, action.text) && previous) {
+              await supabaseAdmin.from("reminders").update({
+                nudged_on: previous.nudged_on, alerted_on: previous.alerted_on,
+                missed_streak: previous.missed_streak, last_missed_on: previous.last_missed_on,
+              }).eq("id", action.id);
+            }
           }
           if (shouldSendSummary(circle.summary_time, circle.summary_sent_on, date, minute)) {
-            const text = dailySummary(reminders ?? [], date, minute);
-            if (await send(circle.telegram_chat_id, text)) {
-              await supabaseAdmin.from("care_circles").update({ summary_sent_on: date }).eq("id", circle.id);
+            const { data: claimed } = await supabaseAdmin.from("care_circles").update({ summary_sent_on: date })
+              .eq("id", circle.id).or(`summary_sent_on.is.null,summary_sent_on.neq.${date}`).select("id");
+            if (claimed?.length) {
+              const text = dailySummary(reminders ?? [], date, minute);
+              if (!await send(circle.telegram_chat_id, text)) {
+                await supabaseAdmin.from("care_circles").update({ summary_sent_on: circle.summary_sent_on }).eq("id", circle.id);
+              }
             }
           }
         }

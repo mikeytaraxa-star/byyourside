@@ -19,8 +19,13 @@ export const Route = createFileRoute('/api/public/g2/sync')({
           const at = new Date().toISOString();
           await supabaseAdmin.from('g2_devices').update({ last_lat: loc.lat, last_lng: loc.lng, last_accuracy: loc.accuracy, last_location_at: at }).eq('id', deviceId);
           if (circle?.findme_requested_at && circle.telegram_chat_id) {
-            const sent = await telegramCall('sendVenue', venueBody(Number(circle.telegram_chat_id), { ...loc, at }, new Date()));
-            if (sent) await supabaseAdmin.from('care_circles').update({ findme_requested_at: null }).eq('id', circleId);
+            // Claim the request first so two syncs at once cannot both send the location.
+            const { data: claimed } = await supabaseAdmin.from('care_circles').update({ findme_requested_at: null })
+              .eq('id', circleId).eq('findme_requested_at', circle.findme_requested_at).select('id');
+            if (claimed?.length) {
+              const sent = await telegramCall('sendVenue', venueBody(Number(circle.telegram_chat_id), { ...loc, at }, new Date()));
+              if (!sent) await supabaseAdmin.from('care_circles').update({ findme_requested_at: circle.findme_requested_at }).eq('id', circleId).is('findme_requested_at', null);
+            }
           }
         }
         const { date } = localClock(new Date(), circle?.timezone ?? 'UTC');
