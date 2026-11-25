@@ -39,7 +39,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
   const selectedMissed = Boolean(selected && hasClock && selected.status === 'pending' && minute - toMin(selected.time) >= MISSED_AFTER_MINUTES);
   const display = useMemo(() => ({
     clock: hasClock ? fmt(minute) : '--:--',
-    title: recording ? 'MICROPHONE' : selected ? `${selected.status === 'done' ? 'DONE' : selectedMissed ? (missedCount > 1 ? `EARLIER · 1 OF ${missedCount}` : 'EARLIER') : 'TODAY'} · ${selected.time}` : 'TODAY',
+    title: recording ? 'MICROPHONE' : selected ? `${selected.critical ? 'IMPORTANT · ' : ''}${selected.status === 'done' ? 'DONE' : selectedMissed ? (missedCount > 1 ? `EARLIER · 1 OF ${missedCount}` : 'EARLIER') : 'TODAY'} · ${selected.time}` : 'TODAY',
     body: recording ? 'Listening locally' : selected ? `${selected.text}${selected.detail ? `. ${selected.detail}` : ''}` : 'Nothing planned. Take your time.',
     footer: recording ? 'Release to stop' : selectedMissed ? 'Still to do? Tap = done' : selected?.status === 'done' ? 'All done. Thank you.' : selected && toMin(selected.time) <= minute ? 'Tap = done' : selected ? 'Not due yet' : '',
   }), [selected, hasClock, minute, recording, selectedMissed, missedCount]);

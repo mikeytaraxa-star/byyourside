@@ -1,4 +1,4 @@
-export type Reminder = { id: string; time: string; text: string; detail?: string; status: "pending" | "done" | "missed" };
+export type Reminder = { id: string; time: string; text: string; detail?: string; critical?: boolean; status: "pending" | "done" | "missed" };
 export type Person = { name: string; relation: string; note: string };
 export type Msg = { id: string; from: "family" | "bot"; text: string };
 
@@ -18,13 +18,20 @@ export function parseCommand(input: string):
   | { kind: "person"; person: Person; reply: string }
   | { kind: "error"; reply: string } {
   const t = input.trim();
-  const r = t.match(/^\/remind\s+(\d{1,2}):(\d{2})\s+(.+)$/i);
+  const r = t.match(/^\/(remind|critical)(?:@\w+)?\s+(\d{1,2}):(\d{2})\s+(.+)$/i);
   if (r) {
-    const h = Number(r[1]), m = Number(r[2]);
+    const h = Number(r[2]), m = Number(r[3]);
     if (h > 23 || m > 59) return { kind: "error", reply: "⚠️ That time doesn't look right. Try /remind 14:00 Blue pill" };
-    const [text, detail] = (r[3] ?? "").split(/\s+[—-]\s+/);
+    const [text, detail] = (r[4] ?? "").split(/\s+[—-]\s+/);
     const time = fmt(h * 60 + m);
-    return { kind: "remind", reminder: { time, text: (text ?? "").trim(), ...(detail ? { detail: detail.trim() } : {}) }, reply: `✅ Reminder set for ${time}: “${text?.trim()}”. I'll tell you when it's done.` };
+    const critical = r[1]?.toLowerCase() === "critical";
+    return {
+      kind: "remind",
+      reminder: { time, text: (text ?? "").trim(), ...(detail ? { detail: detail.trim() } : {}), ...(critical ? { critical: true } : {}) },
+      reply: critical
+        ? `❗ Important reminder set for ${time}: “${text?.trim()}”. If it stays unconfirmed on a second day in a row, I'll send a stronger family alert.`
+        : `✅ Reminder set for ${time}: “${text?.trim()}”. I'll tell you when it's done.`,
+    };
   }
   const p = t.match(/^\/person\s+(.+)$/i);
   if (p) {
@@ -32,7 +39,7 @@ export function parseCommand(input: string):
     if (!name || !relation) return { kind: "error", reply: "⚠️ Use: /person Anna | daughter | visits on Sundays" };
     return { kind: "person", person: { name, relation, note: note ?? "" }, reply: `👤 Saved ${name} (${relation}). Your Loved One can now ask “Who is ${name}?”` };
   }
-  return { kind: "error", reply: "I understand:\n/remind 14:00 Blue pill — with water\n/person Anna | daughter | visits Sundays" };
+  return { kind: "error", reply: "I understand:\n/remind 14:00 Blue pill — with water\n/critical 08:00 Blue pill — with water\n/person Anna | daughter | visits Sundays" };
 }
 
 /** Simple on-device answer used for the demo; in production this goes to the private AI. */

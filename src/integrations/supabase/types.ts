@@ -20,6 +20,8 @@ export type Database = {
           display_name: string
           findme_requested_at: string | null
           id: string
+          summary_sent_on: string | null
+          summary_time: string
           telegram_chat_id: number
           timezone: string
         }
@@ -28,6 +30,8 @@ export type Database = {
           display_name?: string
           findme_requested_at?: string | null
           id?: string
+          summary_sent_on?: string | null
+          summary_time?: string
           telegram_chat_id: number
           timezone?: string
         }
@@ -36,6 +40,8 @@ export type Database = {
           display_name?: string
           findme_requested_at?: string | null
           id?: string
+          summary_sent_on?: string | null
+          summary_time?: string
           telegram_chat_id?: number
           timezone?: string
         }
@@ -159,9 +165,12 @@ export type Database = {
           confirmed_at: string | null
           confirmed_on: string | null
           created_at: string
+          critical: boolean
           detail: string | null
           id: string
+          last_missed_on: string | null
           local_time: string
+          missed_streak: number
           nudged_on: string | null
           status: string
           title: string
@@ -172,9 +181,12 @@ export type Database = {
           confirmed_at?: string | null
           confirmed_on?: string | null
           created_at?: string
+          critical?: boolean
           detail?: string | null
           id?: string
+          last_missed_on?: string | null
           local_time: string
+          missed_streak?: number
           nudged_on?: string | null
           status?: string
           title: string
@@ -185,9 +197,12 @@ export type Database = {
           confirmed_at?: string | null
           confirmed_on?: string | null
           created_at?: string
+          critical?: boolean
           detail?: string | null
           id?: string
+          last_missed_on?: string | null
           local_time?: string
+          missed_streak?: number
           nudged_on?: string | null
           status?: string
           title?: string

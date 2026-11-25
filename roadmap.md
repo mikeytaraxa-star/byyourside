@@ -1,5 +1,11 @@
 # ByYourSide live integrations
 
+- [x] Add real-day fallback scenarios for showering, charging, forgotten glasses, offline use and reopening.
+- [x] Add a configurable daily Telegram family summary of confirmed, missed and upcoming reminders.
+- [x] Mark important reminders and alert families when they remain unconfirmed on a second consecutive day.
+- [x] Add sourced market research, competitor positioning and a families-first pricing hypothesis.
+- [x] Verify the new scheduling rules, tests, documentation and browser presentation.
+
 - [x] Add and verify a shareable /demovideo page for the narrated hackathon film, linked from site navigation; desktop/mobile playback, seeking and navigation checked.
 
 - [x] Render a three-minute hackathon demo draft with male narration, the founder's real motivation, existing motion-design reference, and honest integration-status labels; file and still-frame checks complete, playback/listening review pending.

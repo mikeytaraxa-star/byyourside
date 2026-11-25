@@ -10,7 +10,7 @@ export function restoreSession(raw: string, date = todayKey()): G2Session {
   try {
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== 'object' || !('reminders' in value) || !Array.isArray(value.reminders)) return emptySession();
-    const reminders = value.reminders.filter((row): row is Reminder => Boolean(row && typeof row.id === 'string' && typeof row.time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(row.time) && typeof row.text === 'string' && row.text.length <= 300 && (row.detail === undefined || typeof row.detail === 'string') && ['pending', 'done', 'missed'].includes(row.status))).slice(0, 50);
+    const reminders = value.reminders.filter((row): row is Reminder => Boolean(row && typeof row.id === 'string' && typeof row.time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(row.time) && typeof row.text === 'string' && row.text.length <= 300 && (row.detail === undefined || typeof row.detail === 'string') && (row.critical === undefined || typeof row.critical === 'boolean') && ['pending', 'done', 'missed'].includes(row.status))).slice(0, 50);
     const sameDay = 'date' in value && value.date === date;
     return { date, reminders: reminders.map(row => sameDay ? row : { ...row, status: 'pending' }), selected: 0, sample: 'sample' in value && value.sample === true };
   } catch { return emptySession(); }

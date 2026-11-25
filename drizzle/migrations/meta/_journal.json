@@ -29,6 +29,13 @@
       "when": 1795480061736,
       "tag": "0003_findme_location",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795609192832,
+      "tag": "0004_daily_summaries_and_critical_reminders",
+      "breakpoints": true
     }
   ]
 }

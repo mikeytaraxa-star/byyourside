@@ -7,6 +7,9 @@ Bot: <https://t.me/bysappbot>
 | Command | Example | Result |
 | --- | --- | --- |
 | `/remind HH:MM text` | `/remind 08:00 Take the blue pill from the table` | Adds a daily reminder. |
+| `/critical HH:MM text` | `/critical 08:00 Blue pill — with water` | Adds an important reminder with second-consecutive-day escalation. |
+| `/summary HH:MM` | `/summary 21:00` | Sets the daily family-summary time in the circle's time zone. |
+| `/summary off` | `/summary off` | Disables the daily summary; `/summary` shows the current setting. |
 | `/person Name \| relation \| detail` | `/person Anna \| daughter \| lives in New York` | Adds a familiar person. |
 | `/ask question` | `/ask Who is Anna?` | Answer grounded in the care circle (Cocoon, or labelled demo). |
 | `/done HH:MM` | `/done 08:00` | Marks today's reminder done and stops the alert. |
@@ -15,9 +18,13 @@ Bot: <https://t.me/bysappbot>
 
 ## Notifications
 
-- **At due time** — the reminder is sent to the chat.
+- **At due time** — the reminder is sent to the chat, independently of whether the glasses are being worn.
 - **After 15 minutes unconfirmed** — one alert per reminder per day, e.g. "Blue pill not confirmed yet".
+- **Second consecutive day** — `/critical` reminders produce a stronger SECOND DAY alert if still unconfirmed; a same-day confirmation resets the streak.
+- **Daily summary** — at 21:00 local time by default, listing confirmed, not-confirmed and upcoming reminders. `/summary HH:MM` changes it and `/summary off` disables it.
 - **On glasses tap** — "✅ done" is posted to the family chat.
+
+“Confirmed” records a tap or `/done`; it does not verify medication ingestion. See [real-day fallback scenarios](real-day-and-business.md) for showers, charging, forgotten glasses and offline behavior.
 
 ## /findme
 

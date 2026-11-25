@@ -111,7 +111,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const { data: circle, error: circleError } = await supabaseAdmin
           .from("care_circles")
           .upsert({ telegram_chat_id: chatId }, { onConflict: "telegram_chat_id" })
-          .select("id")
+          .select("id, summary_time")
           .single();
         if (circleError || !circle)
           return Response.json(
@@ -123,7 +123,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         let reply = "";
         if (text === "/start" || text === "/help") {
           reply =
-            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nConnect the glasses:\n/pair\n\nFind Your Loved One (glasses location):\n/findme\n\nSet your time zone (for reminder alerts):\n/timezone Europe/Berlin\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
+            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nMark medication or another important reminder:\n/critical 08:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nConnect the glasses:\n/pair\n\nFind Your Loved One (glasses location):\n/findme\n\nSet your time zone:\n/timezone Europe/Berlin\n\nDaily family summary (default 21:00):\n/summary 21:00 or /summary off\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
         } else if (/^\/timezone(?:@\w+)?\s+/i.test(text)) {
           const tz = text.replace(/^\/timezone(?:@\w+)?\s+/i, "").trim();
           if (!isValidTimeZone(tz)) reply = "⚠️ I don't know that time zone. Try /timezone Europe/Berlin or /timezone America/New_York";
@@ -149,6 +149,27 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const code = newPairCode();
           const { error } = await supabaseAdmin.from("pairing_codes").insert({ code, circle_id: circle.id, expires_at: new Date(Date.now() + PAIR_TTL_MINUTES * 60_000).toISOString() });
           reply = error ? "⚠️ I couldn't create a code. Please send /pair again." : `👓 Your glasses code: ${formatPairCode(code)}\n\nEnter it once in the ByYourSide app on the phone connected to the glasses. It works for ${PAIR_TTL_MINUTES} minutes and only once.\n\n🔒 Never share this code. ByYourSide will never ask you for it, and anyone who has it could see your family's reminders. If someone asks for it, it's a scam.`;
+        } else if (/^\/summary(?:@\w+)?(?:\s+.*)?$/i.test(text)) {
+          const setting = text.replace(/^\/summary(?:@\w+)?\s*/i, "").trim();
+          if (!setting) {
+            reply = circle.summary_time === "off"
+              ? "🌙 Daily summaries are off. Send /summary 21:00 to turn them on."
+              : `🌙 The daily family summary is set for ${circle.summary_time}. Send /summary 20:30 to change it or /summary off to disable it.`;
+          } else if (/^off$/i.test(setting)) {
+            const { error } = await supabaseAdmin.from("care_circles").update({ summary_time: "off" }).eq("id", circle.id);
+            reply = error ? `⚠️ I couldn't save that: ${error.message}` : "🌙 Daily summaries are off. Send /summary 21:00 to turn them back on.";
+          } else {
+            const match = setting.match(/^(\d{1,2}):(\d{2})$/);
+            const hour = Number(match?.[1]);
+            const minute = Number(match?.[2]);
+            if (!match || hour > 23 || minute > 59) {
+              reply = "⚠️ Use a time like /summary 21:00, or /summary off.";
+            } else {
+              const summaryTime = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+              const { error } = await supabaseAdmin.from("care_circles").update({ summary_time: summaryTime }).eq("id", circle.id);
+              reply = error ? `⚠️ I couldn't save that: ${error.message}` : `🌙 Daily family summary set for ${summaryTime}. It lists confirmed, not-confirmed and upcoming reminders.`;
+            }
+          }
         } else if (parseDone(text)) {
           const wanted = parseDone(text)?.time ?? null;
           const { data: tzRow } = await supabaseAdmin.from("care_circles").select("timezone").eq("id", circle.id).single();
@@ -159,7 +180,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const match = wanted ? open.find((row) => row.local_time.slice(0, 5) === wanted) : open[open.length - 1];
           if (!match) reply = wanted ? `I couldn't find an open reminder at ${wanted} today.` : "There's nothing due to confirm right now. 💚";
           else {
-            const { error } = await supabaseAdmin.from("reminders").update({ confirmed_on: date, confirmed_at: new Date().toISOString(), status: "done" }).eq("id", match.id);
+            const { error } = await supabaseAdmin.from("reminders").update({ confirmed_on: date, confirmed_at: new Date().toISOString(), status: "done", missed_streak: 0, last_missed_on: null }).eq("id", match.id);
             reply = error ? `⚠️ I couldn't confirm that: ${error.message}` : `✅ ${match.title} (${match.local_time.slice(0, 5)}) is done. Thank you!`;
           }
         } else if (/^\/ask\s+/i.test(text)) {
@@ -212,6 +233,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               local_time: command.reminder.time,
               title: command.reminder.text,
               detail: command.reminder.detail ?? null,
+              critical: command.reminder.critical ?? false,
             });
             if (error) reply = `⚠️ I couldn’t save that reminder: ${error.message}`;
           }

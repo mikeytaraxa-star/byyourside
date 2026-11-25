@@ -11,6 +11,7 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import logo from "@/assets/byyourside_heart_hand_logo.svg.asset.json";
 import shareImage from "@/assets/byyourside_share.png.asset.json";
 import { getRequestOrigin } from "@/lib/origin.functions";
+import { dailySummary } from "@/lib/reminder-alerts";
 import {
   answer,
   answerQuestion,
@@ -151,6 +152,10 @@ function Index() {
     setMsgs((m) => [...m, { id: id(), from: "family", text }]);
     const res = parseCommand(text);
     setTimeout(() => {
+      if (/^\/summary(?:@\w+)?(?:\s+.*)?$/i.test(text.trim())) {
+        bot(dailySummary(reminders.map(r => ({ local_time: r.time, title: r.text, confirmed_on: r.status === "done" ? "Demo day" : null, critical: r.critical ?? false })), "Demo day", 21 * 60));
+        return;
+      }
       if (res.kind === "remind")
         setReminders((r) => [...r, { ...res.reminder, id: id(), status: "pending" }]);
       if (res.kind === "person")
@@ -306,7 +311,8 @@ function Index() {
                 {[
                   "/remind 14:05 Drink water — one full glass",
                   "/person Lena | neighbour | brings the newspaper",
-                  "/remind 14:20 Call Anna",
+                  "/critical 08:00 Blue pill — with water",
+                  "/summary",
                 ].map((c) => (
                   <button
                     key={c}
@@ -420,6 +426,22 @@ function Index() {
           })
         }
       />
+
+      <section className="mx-auto max-w-7xl px-5 pb-16" aria-labelledby="real-day-title">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <div><p className="font-mono text-xs uppercase tracking-widest text-primary">Beyond the happy path</p><h2 id="real-day-title" className="mt-2 font-display text-2xl font-bold">A real day, even when the glasses are off</h2></div>
+          <Button asChild variant="outline" size="sm"><Link to="/docs">Full safety & business notes</Link></Button>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            ["Forgotten in the morning", "Telegram sends the due reminder anyway. Family gets a 15-minute unconfirmed alert; reopening shows EARLIER items first."],
+            ["Off for a shower", "Telegram remains the backup. The app does not pretend to detect showering or removal."],
+            ["Charging overnight", "No glasses display or sensing is claimed. Telegram nudges and the 21:00 family summary still run."],
+            ["Important item missed twice", "/critical reminders trigger a SECOND DAY family alert after two consecutive unconfirmed days."],
+          ].map(([title, body]) => <article key={title} className="rounded-2xl border border-border bg-card p-5"><h3 className="font-display text-lg font-bold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p></article>)}
+        </div>
+        <p className="mt-4 text-sm text-muted-foreground">The daily Telegram summary separates confirmed, not-confirmed and upcoming items. Confirmed means a tap or /done — never proof that medication was taken.</p>
+      </section>
 
       <section className="mx-auto grid max-w-7xl gap-4 px-5 pb-16 sm:grid-cols-3">
         {[

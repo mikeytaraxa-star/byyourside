@@ -19,7 +19,7 @@ export const Route = createFileRoute('/api/public/g2/done')({
         if (!circle) return json({ ok: false, error: 'unpaired' }, 401);
         const { date } = localClock(new Date(), circle.timezone);
         const { data: rows, error } = await supabaseAdmin.from('reminders')
-          .update({ confirmed_on: date, confirmed_at: new Date().toISOString(), status: 'done' })
+          .update({ confirmed_on: date, confirmed_at: new Date().toISOString(), status: 'done', missed_streak: 0, last_missed_on: null })
           .eq('id', parsed.data.reminderId).eq('circle_id', circleId).or(`confirmed_on.is.null,confirmed_on.neq.${date}`)
           .select('title, local_time');
         if (error) return json({ ok: false, error: 'Could not save' }, 500);

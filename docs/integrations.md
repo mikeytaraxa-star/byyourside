@@ -7,6 +7,8 @@ The repository contains no provider credentials. The visible demo works without 
 The webhook at `/api/public/telegram/webhook` supports two-way family messages:
 
 - `/remind 14:00 Blue pill — with water`
+- `/critical 08:00 Blue pill — with water` for second-consecutive-day family escalation
+- `/summary 21:00` or `/summary off` for the daily confirmed/missed/upcoming digest
 - `/person Anna | daughter | visits Sundays`
 - `/ask What is next?`
 

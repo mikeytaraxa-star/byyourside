@@ -23,7 +23,7 @@
 | --- | --- | --- |
 | Command engine | `src/components/demo/engine.ts` | Pure functions shared by the web demo and the Telegram bot. |
 | Telegram webhook | `src/routes/api/public/telegram/webhook.ts` | Verifies Telegram's secret-token header before reading the update. |
-| Reminder alerts | `src/lib/reminder-alerts.ts`, `api/public/jobs/reminder-alerts.ts` | Due-time nudge, one family alert after 15 minutes, per care-circle time zone. |
+| Reminder alerts & summaries | `src/lib/reminder-alerts.ts`, `api/public/jobs/reminder-alerts.ts` | Due-time nudge, family alert after 15 minutes, important-reminder second-day escalation and daily digest; per care-circle time zone. |
 | Find me | `src/lib/findme.ts`, telegram webhook, `api/public/g2/sync` | `/findme` returns the last synced location as a Telegram map card; stale locations are refreshed on the next glasses sync. |
 | Pairing & sync | `src/lib/pairing.ts`, `src/lib/g2-sync.server.ts`, `api/public/g2/*` | One-time 10-character code → revocable device token; minute sync; tap completion. |
 | Cocoon adapter | `src/lib/cocoon.server.ts` | Server-only, OpenAI-compatible; labelled demo answers when unconfigured. |
