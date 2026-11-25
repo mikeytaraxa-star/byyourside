@@ -430,7 +430,7 @@ function Index() {
       <section className="mx-auto max-w-7xl px-5 pb-16" aria-labelledby="real-day-title">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div><p className="font-mono text-xs uppercase tracking-widest text-primary">Beyond the happy path</p><h2 id="real-day-title" className="mt-2 font-display text-2xl font-bold">A real day, even when the glasses are off</h2></div>
-          <Button asChild variant="outline" size="sm"><Link to="/docs">Full safety & business notes</Link></Button>
+          <Button asChild variant="outline" size="sm"><Link to="/docs">Full safety & research notes</Link></Button>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[

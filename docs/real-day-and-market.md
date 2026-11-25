@@ -1,6 +1,6 @@
-# A real day with ByYourSide — and the business case
+# A real day with ByYourSide — market research
 
-This document answers the demo-day questions about imperfect, ordinary days. It distinguishes what is implemented from what is still a product or commercial hypothesis.
+This document answers the demo-day questions about imperfect, ordinary days and the product's context. ByYourSide is intended to remain free for everyone; it distinguishes implemented behavior from product hypotheses.
 
 ## The safety net, in one paragraph
 
@@ -43,13 +43,9 @@ This is intentionally a family-defined escalation, not an automatic medical-risk
 
 ## Market research — desk research, checked 25 November 2026
 
-### Need and payer context
+### Need and care context
 
-The World Health Organization reports **57 million people living with dementia in 2021**, nearly **10 million new cases annually**, and a **US$1.3 trillion global economic cost in 2019**. About half of that cost was attributable to informal carers, who provided an average of five hours of care and supervision per day. This supports a product thesis around reducing family coordination burden; it is not a revenue forecast. Source: [WHO dementia fact sheet](https://www.who.int/news-room/fact-sheets/detail/dementia).
-
-In the United States, the Alzheimer's Association projected **US$384 billion in paid dementia care in 2025** and valued family and friends' unpaid care at **US$413.4 billion in 2024**. These figures show both institutional and family payer contexts, but do not establish willingness to pay for ByYourSide. Source: [2025 Alzheimer's Disease Facts and Figures — executive summary](https://www.alz.org/getmedia/c05f7ba4-9aea-4cb0-8898-5e8bff3f0930/executive-summary-2025-alzheimers-disease-facts-and-figures.pdf).
-
-A 2025 Dutch study of smart monitoring for home-based dementia care identified distinct consumer, healthcare and social-support business models, and highlighted time-to-market, reimbursement complexity and implementation alignment as challenges. ByYourSide therefore starts with a direct family offer before attempting insurer reimbursement. Source: [Smart monitoring technology to support home-based dementia care](https://pmc.ncbi.nlm.nih.gov/articles/PMC11951899/).
+The World Health Organization reports **57 million people living with dementia in 2021**, nearly **10 million new cases annually**, and a **US$1.3 trillion global economic cost in 2019**. About half of that cost was attributable to informal carers, who provided an average of five hours of care and supervision per day. This supports the product's focus on reducing family coordination burden. Source: [WHO dementia fact sheet](https://www.who.int/news-room/fact-sheets/detail/dementia).
 
 ### Competitor snapshot
 
@@ -65,32 +61,11 @@ No independent clinical superiority, customer traction or competitor market shar
 
 Even Realities lists G2 frames **from US$599**, with prescription configuration and accessories potentially adding cost. That is a significant adoption barrier and should be tested explicitly with families. Source: [Even Realities store](https://www.evenrealities.com/store). ByYourSide should not require families to buy hardware before they can evaluate the Telegram reminder and family-summary workflow.
 
-## Business model — hypotheses, not current charges
-
-### 1. Families first
-
-- **Proposed price:** **€12 per household per month**, or **€120 per year**.
-- Includes one Loved One, family Telegram circle, important-reminder escalation, daily summaries and multi-device pairing.
-- Glasses, prescription lenses, phone, Telegram and connectivity are separate third-party costs.
-- Proposed pilot: free for 30 days, then ask for payment; do not imply that payments are live today.
-
-### 2. Care homes and home-care providers later
-
-- **Proposed starting point:** **€8 per resident per month**, with a **20-resident minimum** (€160/month), plus paid onboarding for larger deployments.
-- Requires future team roles, resident-level permissions, audit exports, staff handover, procurement and support processes before selling.
-
-### 3. Insurers and public-care partners later
-
-- Begin with a **fixed-price three-month pilot**, priced only after the number of participants, onboarding and support are known.
-- Evaluate caregiver check-in time, reminder confirmation rate, missed-important-reminder rate, continued device use and family retention.
-- Do not promise reduced hospitalizations, cost savings or reimbursement without evidence.
-
 ## What to validate next
 
 1. Interview 10–15 dementia family caregivers and 5 care professionals; this desk research is not a substitute for interviews.
-2. Test whether €12/month is acceptable with and without a separate hardware rental or subsidy.
-3. Measure daily glasses use, phone-only fallback use, confirmation rates and alert fatigue over a four-week pilot.
-4. Ask care homes what permissions, audit trails and procurement assurances they require.
-5. Approach insurers only after a family pilot produces credible retention and caregiver-time evidence.
+2. Test daily glasses use, the Telegram-only fallback and whether hardware cost prevents adoption.
+3. Measure confirmation rates, missed important reminders and alert fatigue over a four-week pilot.
+4. Ask care professionals which accessibility, privacy and safety improvements would make the free service useful in practice.
 
-**Current commercial status:** no paid plan, reimbursement agreement, clinical efficacy claim or care-home deployment is live.
+**Service status:** ByYourSide is intended to remain free for everyone. No subscriptions, paid licenses or service charges are proposed; third-party hardware and connectivity remain separate.

@@ -39,7 +39,7 @@ ByYourSide puts one short, warm prompt in the corner of the wearer's view, at th
 6. **Safety net** — if a reminder is not confirmed within 15 minutes the family is alerted once; missed items appear first ("EARLIER") when the glasses app is reopened. `/critical` reminders escalate when unconfirmed on a second consecutive day.
 7. **Daily summary** — at 21:00 local time (configurable with `/summary HH:MM`, or `/summary off`), Telegram lists confirmed, not-confirmed and upcoming reminders. Confirmation means a tap or `/done`, not proof that medication was taken.
 
-Real-day fallback scenarios, competitor research and the families-first business hypothesis are documented in [Real day & business](docs/real-day-and-business.md).
+Real-day fallback scenarios and competitor research are documented in [Real day & market research](docs/real-day-and-market.md). ByYourSide is intended to remain free for everyone.
 
 ## Integrations
 

@@ -24,7 +24,7 @@ Bot: <https://t.me/bysappbot>
 - **Daily summary** — at 21:00 local time by default, listing confirmed, not-confirmed and upcoming reminders. `/summary HH:MM` changes it and `/summary off` disables it.
 - **On glasses tap** — "✅ done" is posted to the family chat.
 
-“Confirmed” records a tap or `/done`; it does not verify medication ingestion. See [real-day fallback scenarios](real-day-and-business.md) for showers, charging, forgotten glasses and offline behavior.
+“Confirmed” records a tap or `/done`; it does not verify medication ingestion. See [real-day fallback scenarios](real-day-and-market.md) for showers, charging, forgotten glasses and offline behavior.
 
 ## /findme
 
