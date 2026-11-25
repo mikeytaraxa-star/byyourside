@@ -37,5 +37,7 @@ Bot: <https://t.me/bysappbot>
 ## Setup
 
 1. Create the bot with @BotFather and connect it through the app's secure Telegram connection (never paste the token into code or chat).
-2. Register the webhook: `https://<published-domain>/api/public/telegram/webhook` with a secret token.
+2. Register the signed webhook at the stable production endpoint: `https://project--ebbc3243-b866-43f7-baa1-8e196c6f1290.lovable.app/api/public/telegram/webhook`. The endpoint rejects requests without Telegram's secret-token header.
 3. Send `/start` to the bot and add a first reminder.
+
+The bot token is held only by the encrypted Telegram connection. Server code receives the separate `TELEGRAM_API_KEY` connection key at runtime; neither value belongs in source, `.env`, browser code, screenshots or Git history. The stable endpoint is intentional: custom-domain deployments can briefly lag behind a new publish.

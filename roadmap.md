@@ -21,7 +21,8 @@
 - [x] Keep real local microphone capture with explicit permission; use selected Cocoon demo questions instead of external speech transcription.
 - [x] Verify Cocoon-only demo questions, discarded audio, and no other AI service calls; physical G2/R1 checks remain unavailable without devices.
 
-- [ ] Link the Telegram bot — blocked by credential verification reporting Service Unavailable; exposed token must be revoked before retrying the connection card. Webhook registration and inbound message verification remain pending.
+- [x] Link @bysappbot through the encrypted Telegram connector, verify the bot identity, register the signed stable-production webhook, and confirm signed webhook requests return HTTP 200. No Telegram token was found in tracked files or Git history.
+- [ ] Confirm the first real `/start` welcome message in the user's Telegram chat — waiting for the user to press Start in @bysappbot.
 - [x] Add private persistent storage for reminders, people, and Telegram updates.
 - [x] Add a secure Cocoon OpenAI-compatible adapter with server-only credentials and no repository keys.
 - [ ] Supply a Cocoon client endpoint and its authentication configuration — blocked because no Cocoon client access is available; the official developer site does not currently offer a public API-key signup.
