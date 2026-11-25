@@ -108,6 +108,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: false, error: updateError.message }, { status: 500 });
         if (!stored?.length) return Response.json({ ok: true, duplicate: true });
 
+        // Ignore the same command repeated from this chat within a few seconds (double taps, resent Start).
+        const { data: recent } = await supabaseAdmin
+          .from("telegram_updates")
+          .select("update_id")
+          .eq("chat_id", chatId)
+          .eq("text", message.text)
+          .neq("update_id", update.update_id)
+          .gte("created_at", new Date(Date.now() - 10_000).toISOString())
+          .limit(1);
+        if (recent?.length) return Response.json({ ok: true, repeated: true });
+
         const { data: circle, error: circleError } = await supabaseAdmin
           .from("care_circles")
           .upsert({ telegram_chat_id: chatId }, { onConflict: "telegram_chat_id" })
