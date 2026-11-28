@@ -1,5 +1,10 @@
 # ByYourSide live integrations
 
+## Family status view
+
+- [x] Add private family status with per-companion sync times, recorded actions and separate offline pending choices; never infer medication adherence or glasses wear.
+- [x] Verify evidence rules (11 new tests) and private family-to-companion confirmation readback on desktop/mobile; full suite 237 passing tests. Physical device sync remains outside browser verification.
+
 ## Security and functionality audit
 
 - [x] Review authored app source, access boundaries, private media, device synchronization, dependencies and database privileges; fix verified access, credential lifecycle, hidden reminder action and recovery issues with regression tests.

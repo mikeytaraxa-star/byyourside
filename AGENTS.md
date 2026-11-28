@@ -61,3 +61,4 @@ use the editor.
 - G2 asynchronous replies are gated by pairing generation and family-local clocks; support screens cannot confirm hidden reminders, preventing cross-family disclosure and wrong-occurrence actions.
 - Validate every private media path against both circle and note identifiers before signing or removing it; stored paths are not authority.
 - Telegram outbound delivery requires a recorded chat /start opt-in; keep provider error bodies out of logs because they may contain private care facts.
+- Family status derives confirmations from durable care events and sync times from device check-ins; keep offline optimistic choices separate so cached state never implies recorded completion or medication adherence.

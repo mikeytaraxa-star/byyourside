@@ -24,6 +24,7 @@ import { Route as FamilyHistoryRouteImport } from './routes/family.history'
 import { Route as FamilyPeopleRouteImport } from './routes/family.people'
 import { Route as FamilyRoutinesRouteImport } from './routes/family.routines'
 import { Route as FamilySettingsRouteImport } from './routes/family.settings'
+import { Route as FamilyStatusRouteImport } from './routes/family.status'
 import { Route as ApiPublicCareAccessRouteImport } from './routes/api/public/care/access'
 import { Route as ApiPublicCareWorkspaceRouteImport } from './routes/api/public/care/workspace'
 import { Route as ApiPublicG2ActionRouteImport } from './routes/api/public/g2/action'
@@ -110,6 +111,11 @@ const FamilySettingsRoute = FamilySettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => FamilyRoute,
 } as any)
+const FamilyStatusRoute = FamilyStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => FamilyRoute,
+} as any)
 const ApiPublicCareAccessRoute = ApiPublicCareAccessRouteImport.update({
   id: '/api/public/care/access',
   path: '/api/public/care/access',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/family/people': typeof FamilyPeopleRoute
   '/family/routines': typeof FamilyRoutinesRoute
   '/family/settings': typeof FamilySettingsRoute
+  '/family/status': typeof FamilyStatusRoute
   '/family/': typeof FamilyIndexRoute
   '/api/public/care/access': typeof ApiPublicCareAccessRoute
   '/api/public/care/workspace': typeof ApiPublicCareWorkspaceRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/family/people': typeof FamilyPeopleRoute
   '/family/routines': typeof FamilyRoutinesRoute
   '/family/settings': typeof FamilySettingsRoute
+  '/family/status': typeof FamilyStatusRoute
   '/family': typeof FamilyIndexRoute
   '/api/public/care/access': typeof ApiPublicCareAccessRoute
   '/api/public/care/workspace': typeof ApiPublicCareWorkspaceRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/family/people': typeof FamilyPeopleRoute
   '/family/routines': typeof FamilyRoutinesRoute
   '/family/settings': typeof FamilySettingsRoute
+  '/family/status': typeof FamilyStatusRoute
   '/family/': typeof FamilyIndexRoute
   '/api/public/care/access': typeof ApiPublicCareAccessRoute
   '/api/public/care/workspace': typeof ApiPublicCareWorkspaceRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/family/people'
     | '/family/routines'
     | '/family/settings'
+    | '/family/status'
     | '/family/'
     | '/api/public/care/access'
     | '/api/public/care/workspace'
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/family/people'
     | '/family/routines'
     | '/family/settings'
+    | '/family/status'
     | '/family'
     | '/api/public/care/access'
     | '/api/public/care/workspace'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/family/people'
     | '/family/routines'
     | '/family/settings'
+    | '/family/status'
     | '/family/'
     | '/api/public/care/access'
     | '/api/public/care/workspace'
@@ -457,6 +469,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FamilySettingsRouteImport
       parentRoute: typeof FamilyRoute
     }
+    '/family/status': {
+      id: '/family/status'
+      path: '/status'
+      fullPath: '/family/status'
+      preLoaderRoute: typeof FamilyStatusRouteImport
+      parentRoute: typeof FamilyRoute
+    }
     '/api/public/care/access': {
       id: '/api/public/care/access'
       path: '/api/public/care/access'
@@ -536,6 +555,7 @@ interface FamilyRouteChildren {
   FamilyPeopleRoute: typeof FamilyPeopleRoute
   FamilyRoutinesRoute: typeof FamilyRoutinesRoute
   FamilySettingsRoute: typeof FamilySettingsRoute
+  FamilyStatusRoute: typeof FamilyStatusRoute
   FamilyIndexRoute: typeof FamilyIndexRoute
 }
 
@@ -545,6 +565,7 @@ const FamilyRouteChildren: FamilyRouteChildren = {
   FamilyPeopleRoute: FamilyPeopleRoute,
   FamilyRoutinesRoute: FamilyRoutinesRoute,
   FamilySettingsRoute: FamilySettingsRoute,
+  FamilyStatusRoute: FamilyStatusRoute,
   FamilyIndexRoute: FamilyIndexRoute,
 }
 
