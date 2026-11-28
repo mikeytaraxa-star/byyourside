@@ -152,7 +152,7 @@ export async function careOperation(actor:FamilyActor,input:z.infer<typeof reque
   if(input.op==='media-read'||input.op==='media'||input.op==='media-remove'){
     const {data:note}=await client.from('care_notes').select('id,media_path').eq('id',input.noteId).eq('circle_id',circleId).single();if(!note)throw new Error('Note unavailable');
     if(note.media_path&&!familyMediaPath(note.media_path,circleId,note.id))throw new Error('Media unavailable');
-    if(input.op==='media-read'){if(!note.media_path)return {ok:true,url:null};const {data,error}=await client.storage.from('care-family-media').createSignedUrl(note.media_path,120);check(error);return {ok:true,url:data?.signedUrl??null};}
+    if(input.op==='media-read'){if(!note.media_path)return {ok:true,url:null};const {inlineFamilyMedia}=await import('./media-inline.server');const url=await inlineFamilyMedia(client as never,note.media_path);if(!url)throw new Error('Media unavailable');return {ok:true,url};}
     if(input.op==='media-remove'){if(note.media_path)check((await client.storage.from('care-family-media').remove([note.media_path])).error);check((await client.from('care_notes').update({media_path:null,media_kind:null}).eq('id',note.id).eq('circle_id',circleId)).error);return {ok:true};}
     if((input.kind==='photo')!==input.mime.startsWith('image/'))throw new Error('Choose a matching photo or audio file.');
     let bytes:Uint8Array;try{bytes=Uint8Array.from(atob(input.data),c=>c.charCodeAt(0));}catch{throw new Error('Invalid media file');}validateFamilyFile(bytes.length,input.mime);

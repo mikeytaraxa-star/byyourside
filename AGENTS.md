@@ -51,7 +51,7 @@ use the editor.
 - Keep everyday care models and rules in src/lib/care; service-only tables are accessed through verified Telegram family sessions or paired-device handlers, always scoped to the resolved circle, so editors and wearers share one schedule.
 - Store reminder occurrence actions independently from recurring templates and deduplicate each durable action; reject old-day confirmations so reconnects cannot confirm the wrong medication occurrence.
 - Telegram Mini App identity uses freshness-checked production Ed25519 signatures; never trust unsigned launch identities or expose a bot token to validate them.
-- Family media belongs in the private care-family-media bucket with scoped short-lived viewing links; do not bundle it with public branding or the hardware package.
+- Family media belongs in the private care-family-media bucket and is returned inline only inside authorized requests (no signed bearer links); do not bundle it with public branding or the hardware package.
 - Keep interface translations in browser-safe typed catalogs; preserve family-authored care facts, use Unicode-aware unambiguous note matching, and serialize native language/menu changes through the display queue so language changes cannot alter gesture meanings or restore stale screens.
 
 - Family voice recording uses a separate consent-gated MediaRecorder hook with local preview and explicit private saving; companion playback uses native phone audio controls, never glasses audio or speech recognition.
