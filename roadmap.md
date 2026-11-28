@@ -1,5 +1,8 @@
 # ByYourSide live integrations
 
+- [x] Prepare managed email sending and a family reminder-alert template for notify.byside.here; email sending remains server-only, with no email queue or database tables.
+- [ ] Verify live email delivery — blocked by sender-domain DNS verification and recipient/alert-trigger setup; preparing infrastructure alone does not enable backup alerts.
+
 - [x] Keep ByYourSide free and remove proposed prices, subscriptions and payer models from judge-facing materials.
 
 - [x] Add real-day fallback scenarios for showering, charging, forgotten glasses, offline use and reopening.
