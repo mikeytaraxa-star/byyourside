@@ -22,7 +22,13 @@ export function ThroughView({ children, clock, onFullscreen }: { children: React
       {clock && <div className="hud-glow absolute left-[5%] top-[6%] font-mono text-sm font-semibold tracking-wider text-hud">{clock}</div>}
       <div className="absolute right-[6%] top-[7%] w-[44%] max-w-[340px]">{children}</div>
       {onFullscreen && (
-        <button onClick={onFullscreen} className="absolute bottom-3 right-3 rounded-full bg-background/70 px-3 py-1.5 text-xs font-semibold text-foreground backdrop-blur hover:bg-primary hover:text-primary-foreground">⛶ Full screen</button>
+        <button
+          onClick={onFullscreen}
+          aria-label="Put glasses on"
+          className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-background/85 px-8 py-3.5 text-base font-semibold tracking-wide text-foreground shadow-lg shadow-black/30 ring-1 ring-primary/50 backdrop-blur transition hover:bg-primary hover:text-primary-foreground hover:ring-primary"
+        >
+          Put glasses on
+        </button>
       )}
     </div>
   );
