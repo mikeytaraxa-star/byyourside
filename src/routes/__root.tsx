@@ -1,5 +1,4 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import bgTexture from "@/assets/bg-texture.jpg";
 import {
   Outlet,
   Link,
@@ -130,8 +129,11 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-background">
-        <img src={bgTexture} alt="" className="h-full w-full object-cover opacity-70" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background/85" />
+        <div className="app-glow app-glow-heart" />
+        <div className="app-glow app-glow-palm" />
+        <div className="app-glow app-glow-ember" />
+        <div className="app-grain absolute inset-0" />
+        <div className="app-vignette absolute inset-0" />
       </div>
       <Outlet />
     </QueryClientProvider>
