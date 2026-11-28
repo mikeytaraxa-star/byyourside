@@ -2,6 +2,34 @@
 
 Bot: <https://t.me/bysappbot>
 
+## Open ByYourSide menu
+
+The intended private-chat menu button is **Open ByYourSide**, opening
+`https://byside.here/family` as a Telegram Mini App. The page verifies Telegram's
+signed, fresh launch identity; it does not trust a user ID supplied by the browser.
+Existing active family membership is required. Starting the bot or accepting a
+family invitation comes before opening the workspace. `/family` remains a fallback
+that issues a private, single-use access code.
+
+Deployment check on 28 November 2026: the custom-domain and published family pages
+returned HTTP 404. Telegram accepted the proposed button configuration, but it was
+reverted to the working command menu rather than leaving users a broken link.
+Publish the current family routes, confirm HTTP 200 and the Telegram launch script,
+then set and read back the Mini App menu. No credentials belong in this setup record.
+
+### Live acceptance checks
+
+1. In the private @bysappbot chat, tap **Open ByYourSide**. Verify that your actual
+   family day appears, not the fictional sample or an unrelated family's records.
+2. In Settings, invite a consenting second Telegram account as a viewer or editor.
+   Share the invitation only with that person, never in a public group.
+3. That account starts @bysappbot and sends `/join CODE` privately. The invitation
+   expires after 30 minutes and can be consumed once. Do not paste it into this repo.
+4. On that account, tap **Open ByYourSide** and verify the intended family appears
+   with the selected access level. A viewer must not be able to edit care templates.
+5. Reusing the invitation must fail. Revoking that member must prevent subsequent
+   family access. Automated handler checks are not a substitute for these live steps.
+
 ## Commands
 
 | Command | Example | Result |

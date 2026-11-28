@@ -15,7 +15,8 @@
 - [x] Add private family media, contact shortcuts, phone reading settings, access revocation, and export/deletion handlers.
 - [x] Extend bounded Cocoon questions and approved wording drafts without another AI provider.
 - [x] Verify isolated real-data save/sync/action/readback, duplicate handling, cross-family denial, permissions and device revocation; refresh docs and the Even Hub package. Full suite: 126 tests passed.
-- [ ] Register the Telegram Mini App menu and re-test real /family and invitations — requires publication and user Telegram interaction.
+- [ ] Enable and live-test the Telegram Mini App menu — Telegram accepted the configuration, but byside.here/family and the published /family returned 404 on 28 November 2026; restored commands until publication approval and successful destination checks.
+- [ ] Confirm real Telegram family opening and invitation acceptance — requires the user's Telegram session and a consenting second account; signed-launch and invitation-command checks are automated, not live-client verification.
 - [ ] Verify live Cocoon/speech, physical G2/R1, and real email delivery — blocked by provider access, hardware and verified sender/mailbox.
 - [x] Add appointment preparation offsets, grouped ordinary notices, per-recipient delivery evidence and offline routine-step replay on G2.
 - [ ] Finish the remainder of the approved expansion: stronger atomic edit/undo recovery and automatic routine selection. These are not shipped; see docs/everyday-companion.md.
