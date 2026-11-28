@@ -75,6 +75,32 @@ const postAlerts = (alerts as unknown as Endpoint).options.server.handlers.POST
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.resetAllMocks() })
 
 describe('signed Telegram → mailbox approval → scheduled parallel alert', () => {
+  it('sends welcome buttons and processes a tapped button through the signed command handler', async () => {
+    vi.stubEnv('TELEGRAM_API_KEY', 'test-connection-key')
+    vi.stubEnv('LOVABLE_API_KEY', 'test-managed-key')
+    const store = serviceStore()
+    database.client = store.client
+    const bodies: Row[] = []
+    vi.stubGlobal('fetch', vi.fn(async (_url: unknown, init: RequestInit) => {
+      bodies.push(JSON.parse(String(init.body)) as Row)
+      return Response.json({ ok: true, result: { message_id: 1 } })
+    }))
+    const signature = createHash('sha256').update('telegram-webhook:test-connection-key').digest('base64url')
+    const send = (id: number, text: string) => postWebhook({ request: new Request('https://app.example/api/public/telegram/webhook', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Telegram-Bot-Api-Secret-Token': signature },
+      body: JSON.stringify({ update_id: id, message: { chat: { id: 7 }, from: { id: 9 }, text } }),
+    }) })
+    expect((await send(1, '/start')).status).toBe(200)
+    expect(bodies[0]?.['reply_markup']).toMatchObject({ keyboard: expect.any(Array), resize_keyboard: true, is_persistent: true })
+    expect((await send(2, '📝 Add reminder')).status).toBe(200)
+    expect(store.tables['reminders']).toHaveLength(1)
+    expect(store.tables['telegram_updates']?.[1]?.['text']).toBe('/remind')
+    expect((await send(3, '🌙 Daily summary')).status).toBe(200)
+    expect(store.tables['telegram_updates']?.[2]?.['text']).toBe('/summary')
+    expect(store.tables['care_circles']?.[0]?.['summary_time']).toBe('off')
+    expect(bodies).toHaveLength(3)
+    expect(bodies[1]?.['reply_markup']).toBeUndefined()
+  })
   it('runs the actual handlers and private persistence path, without sending to real accounts', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-11-28T08:00:00Z'))

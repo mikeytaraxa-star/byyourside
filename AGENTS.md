@@ -33,6 +33,7 @@ use the editor.
 
 - Demo logic (command parsing, answers) lives in src/components/demo/engine.ts as pure functions so the real Telegram bot can reuse it.
 - Telegram updates enter through the verified TanStack webhook and use service-only care tables; do not add anonymous reads of family data.
+- Telegram welcome reply-keyboard labels resolve through the pure navigation module into existing commands before authorization; buttons must not bypass command permissions or create sample care facts.
 - Cocoon calls stay behind the server-only OpenAI-compatible adapter; credentials come from runtime configuration, never source or browser code.
 - G2 hardware APIs stay behind the dynamic SDK import in use-even-hub.ts; normal browsers use explicitly labeled simulations.
 - Decode G2/R1 gestures in a browser-safe pure module and route them through one showcase handler so native and simulated controls have identical behavior.

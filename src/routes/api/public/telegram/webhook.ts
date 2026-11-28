@@ -7,6 +7,7 @@ import { isValidTimeZone, localClock, parseDone } from "@/lib/reminder-alerts";
 import { formatPairCode, isPairCommand, newPairCode, PAIR_TTL_MINUTES } from "@/lib/pairing";
 import { ageLabel, isFindMeCommand, isFresh, mapsLink, venueBody } from "@/lib/findme";
 import { parseEmailCommand } from "@/lib/email-alerts";
+import { navigationCommand, navigationGuidance, welcomeKeyboard } from "@/lib/telegram-navigation";
 
 const messageSchema = z
   .object({
@@ -40,6 +41,7 @@ async function sendTelegram(
   text: string,
   lovableKey: string,
   connectionKey: string,
+  replyMarkup?: ReturnType<typeof welcomeKeyboard>,
 ) {
   const response = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
     method: "POST",
@@ -49,7 +51,7 @@ async function sendTelegram(
       "X-Connection-Api-Key": connectionKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ chat_id: chatId, text }),
+    body: JSON.stringify({ chat_id: chatId, text, ...(replyMarkup ? { reply_markup: replyMarkup } : {}) }),
   });
   const body = await response.text();
   if (!response.ok) {
@@ -89,15 +91,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
         const message = update.message ?? update.edited_message;
         if (!message?.text) return Response.json({ ok: true, ignored: true });
+        const text = navigationCommand(message.text);
 
         // Approval codes are secrets: persist only a digest for command deduplication,
         // never the command's plaintext code in the Telegram event or raw payload.
-        const emailCommand = parseEmailCommand(message.text);
+        const emailCommand = parseEmailCommand(text);
         const storedText = emailCommand?.kind === "verify"
           ? `/email verify [${createHash("sha256").update(emailCommand.code).digest("hex")}]`
           : /^\/join(?:@\w+)?\s+/i.test(message.text)
             ? `/join [${createHash("sha256").update(message.text).digest("hex")}]`
-            : message.text;
+            : text;
         const storedUpdate = {
           ...update,
           ...(update.message ? { message: { ...update.message, text: storedText } } : {}),
@@ -145,7 +148,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             { status: 500 },
           );
 
-        const text = message.text.trim();
         let reply = "";
         // A Telegram sender is trusted only after the webhook signature was checked.
         // The circle's first creator owns it; other relatives explicitly accept invitations.
@@ -162,6 +164,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const readCommand = /^\/(findme|ask)(?:@\w+)?(?:\s|$)/i.test(text) || careAction;
         if (!accessCommand && (!membership || (!readCommand && membership.role === "viewer"))) {
           reply = "Your family owner must grant permission for this command. Ask them for an invitation in /family.";
+        } else if (navigationGuidance(text)) {
+          reply = navigationGuidance(text) ?? "Send /help to see the available commands.";
         } else if (/^\/(family|join|later|needhelp|nottoday|again)(?:@\w+)?(?:\s|$)/i.test(text)) {
           const { telegramCareCommand } = await import("@/lib/care/telegram.server");
           reply = await telegramCareCommand(supabaseAdmin, circle.id, message.from?.id, chatId, text, typeof message.from?.["first_name"] === "string" ? message.from["first_name"] : "Family member") ?? "Check the command and try again.";
@@ -307,7 +311,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         try {
-          await sendTelegram(chatId, reply, lovableKey, connectionKey);
+          await sendTelegram(chatId, reply, lovableKey, connectionKey, welcomeKeyboard(chatId, text));
         } catch (error) {
           return Response.json(
             { ok: false, error: error instanceof Error ? error.message : "Telegram reply failed" },
