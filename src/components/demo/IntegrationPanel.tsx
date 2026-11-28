@@ -25,8 +25,8 @@ export function IntegrationPanel({
   const live = g2.status === "connected";
   const sensorChoice = useRef(0);
   return (
-    <section className="mx-auto max-w-7xl px-5 pb-16" aria-labelledby="integrations-title">
-      <div className="rounded-3xl border border-border bg-card p-5 sm:p-7">
+    <section className="mx-auto max-w-7xl px-5 pb-8" aria-labelledby="integrations-title">
+      <div className="rounded-3xl border border-border/40 bg-card/50 backdrop-blur p-5 sm:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">

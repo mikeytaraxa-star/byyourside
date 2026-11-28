@@ -239,25 +239,24 @@ function Index() {
 
   return (
     <main className="min-h-screen text-foreground">
-      <header className="mx-auto max-w-7xl px-5 pb-5 pt-4">
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+      <header className="mx-auto max-w-7xl px-5 pb-8 pt-4">
+        <nav className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <div className="flex shrink-0 items-center gap-3">
             <Logo3D src={logo.url} />
             <p className="font-display text-sm font-bold text-primary">ByYourSide</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="default" size="sm"><Link to="/family">Family workspace</Link></Button>
-            <Button asChild variant="outline" size="sm"><Link to="/companion">Loved One view</Link></Button>
-            <Button asChild variant="outline" size="sm"><Link to="/g2">Open G2 app</Link></Button>
-            <Button asChild variant="ghost" size="sm"><a href="/downloads/byyourside-g2.ehpk" download>Download G2 package</a></Button>
-            <Button asChild variant="ghost" size="sm"><a href="/downloads/g2-setup.md" download>G2 installation guide</a></Button>
+            <Button asChild variant="ghost" size="sm"><Link to="/companion">Loved One view</Link></Button>
+            <Button asChild variant="ghost" size="sm"><Link to="/g2">G2 app</Link></Button>
+            <Button asChild variant="ghost" size="sm"><Link to="/install">Install</Link></Button>
           </div>
-        </div>
-        <h1 className="mt-4 max-w-4xl font-display text-3xl font-bold leading-tight sm:text-4xl">
+        </nav>
+        <h1 className="mx-auto mt-10 max-w-3xl text-center font-display text-3xl font-bold leading-tight sm:text-5xl">
           Family remembers <span className="text-primary">for</span> Your Loved One — right in front
           of their eyes.
         </h1>
-        <p className="mt-2 max-w-5xl text-sm leading-relaxed text-muted-foreground">
+        <p className="mx-auto mt-4 max-w-2xl text-center text-base leading-relaxed text-muted-foreground">
           Loved ones add reminders and faces in a Telegram chat. Your Loved One sees one calm line
           on their glasses, taps once, and the family knows it's done. Questions are answered by a
           private AI running on Cocoon.
@@ -266,7 +265,7 @@ function Index() {
 
       <section className="mx-auto flex max-w-6xl flex-col gap-4 px-5 pb-8">
           <div className="flex items-center justify-center">
-            <div className="inline-flex rounded-full border border-border p-1 text-sm">
+            <div className="inline-flex rounded-full border border-border/50 bg-card/40 p-1 text-sm backdrop-blur">
               {(["pov", "3d"] as const).map((v) => (
                 <button
                   key={v}
@@ -278,7 +277,7 @@ function Index() {
               ))}
             </div>
           </div>
-          <div className="h-[clamp(420px,64svh,680px)] rounded-3xl border border-border bg-card">
+          <div className="h-[clamp(420px,64svh,680px)] rounded-3xl border border-border/40 bg-card shadow-2xl shadow-black/40">
             <div className="relative h-full w-full overflow-hidden rounded-3xl">
               <div
                 className={`absolute inset-0 transition-all duration-700 ease-out ${view === "pov" ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-[1.03] [&_*]:!pointer-events-none"}`}
@@ -296,7 +295,30 @@ function Index() {
           </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-5 pb-10 lg:grid-cols-[380px_1fr]">
+      <section className="mx-auto grid max-w-5xl gap-8 px-5 pt-16 sm:grid-cols-3">
+        {[
+          [
+            "1 · Family writes",
+            "Anyone in the family Telegram group adds reminders and people with a simple message.",
+          ],
+          [
+            "2 · Your Loved One sees & taps",
+            "One short line on the G2 display. A single tap on the glasses confirms it.",
+          ],
+          [
+            "3 · Nobody worries",
+            "Family gets “done” instantly — or an alert if a reminder is missed for 15 minutes.",
+          ],
+        ].map(([t, d]) => (
+          <div key={t} className="border-t border-primary/40 pt-5">
+            <h3 className="font-display text-lg font-bold">{t}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{d}</p>
+          </div>
+        ))}
+      </section>
+      <section className="mx-auto max-w-7xl px-5 pb-24 pt-12">
+        <div className="mb-8 text-center"><p className="font-mono text-xs uppercase tracking-widest text-primary">Try it</p><h2 className="mt-2 font-display text-3xl font-bold">Message the family bot, tap the glasses</h2></div>
+        <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
         {/* Telegram */}
         <div className="mx-auto w-full max-w-[360px] self-start rounded-[3.2rem] bg-gradient-to-b from-muted-foreground/40 to-muted/60 p-[3px] shadow-[0_18px_40px_-18px_oklch(0.1_0.02_50/0.7)]">
           <div className="rounded-[3.05rem] bg-background p-[10px]">
@@ -385,7 +407,7 @@ function Index() {
           </div>
           <InteractionControls voice={voice} live={g2.status === "connected"} lastGesture={lastGesture}
             onGesture={(action, source) => gesture(action, source, true)} onQuestion={askQuestion} />
-          <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2">
+          <div className="grid gap-3 rounded-2xl border border-border/40 bg-card/50 p-5 backdrop-blur sm:grid-cols-2">
             <div>
               <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
                 Today
@@ -431,6 +453,7 @@ function Index() {
             </div>
           </div>
         </div>
+        </div>
       </section>
 
       <IntegrationPanel
@@ -445,7 +468,7 @@ function Index() {
         }
       />
 
-      <section className="mx-auto max-w-7xl px-5 pb-16" aria-labelledby="real-day-title">
+      <section className="mx-auto max-w-7xl px-5 py-24" aria-labelledby="real-day-title">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div><p className="font-mono text-xs uppercase tracking-widest text-primary">Beyond the happy path</p><h2 id="real-day-title" className="mt-2 font-display text-2xl font-bold">A real day, even when the glasses are off</h2></div>
           <Button asChild variant="outline" size="sm"><Link to="/docs">Full safety & research notes</Link></Button>
@@ -456,32 +479,11 @@ function Index() {
             ["Off for a shower", "Telegram remains the backup. The app does not pretend to detect showering or removal."],
             ["Charging overnight", "No glasses display or sensing is claimed. Telegram nudges and the 21:00 family summary still run."],
             ["Important item missed twice", "/critical reminders trigger a SECOND DAY family alert after two consecutive unconfirmed days."],
-          ].map(([title, body]) => <article key={title} className="rounded-2xl border border-border bg-card p-5"><h3 className="font-display text-lg font-bold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p></article>)}
+          ].map(([title, body]) => <article key={title} className="rounded-2xl border border-border/40 bg-card/50 p-6 backdrop-blur"><h3 className="font-display text-lg font-bold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p></article>)}
         </div>
         <p className="mt-4 text-sm text-muted-foreground">The daily Telegram summary separates confirmed, not-confirmed and upcoming items. Confirmed means a tap or /done — never proof that medication was taken.</p>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-4 px-5 pb-16 sm:grid-cols-3">
-        {[
-          [
-            "1 · Family writes",
-            "Anyone in the family Telegram group adds reminders and people with a simple message.",
-          ],
-          [
-            "2 · Your Loved One sees & taps",
-            "One short line on the G2 display. A single tap on the glasses confirms it.",
-          ],
-          [
-            "3 · Nobody worries",
-            "Family gets “done” instantly — or an alert if a reminder is missed for 15 minutes.",
-          ],
-        ].map(([t, d]) => (
-          <div key={t} className="rounded-2xl border border-border bg-card p-5">
-            <h3 className="font-display text-xl font-bold">{t}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{d}</p>
-          </div>
-        ))}
-      </section>
       {film && <GlassesFilm clock={fmt(now)} onClose={closeFilm} />}
       <SiteFooter />
     </main>
