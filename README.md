@@ -38,12 +38,14 @@ ByYourSide puts one short, warm prompt in the corner of the wearer's view, at th
 5. **Find me** — `/findme` sends the glasses' last shared location to the family as a Telegram map card (opt-in).
 6. **Safety net** — if a reminder is not confirmed within 15 minutes the family is alerted once; missed items appear first ("EARLIER") when the glasses app is reopened. `/critical` reminders escalate when unconfirmed on a second consecutive day.
 7. **Daily summary** — at 21:00 local time (configurable with `/summary HH:MM`, or `/summary off`), Telegram lists confirmed, not-confirmed and upcoming reminders. Confirmation means a tap or `/done`, not proof that medication was taken.
+8. **Email backup** — `/email anna@example.com` requests approval for an inbox you own; use the emailed `/email verify CODE` in the same chat/account within 15 minutes. Approved inboxes receive 15-minute and consecutive-day important-reminder alerts alongside Telegram. `/email` checks status; `/email off` removes the backup inbox.
 
 Real-day fallback scenarios and competitor research are documented in [Real day & market research](docs/real-day-and-market.md). ByYourSide is intended to remain free for everyone.
 
 ## Integrations
 
 - **Telegram** — family interface, pairing, nudges, alerts and confirmations via a verified webhook. See [docs/telegram-bot.md](docs/telegram-bot.md).
+- **App emails** — consent-verified family backup alerts through managed sending on `notify.byside.here`; no credentials in client code, no email queue or new email tables. See [docs/app-emails.md](docs/app-emails.md).
 - **Even Realities G2 / R1** — native display, gestures, menu actions, microphone, location and head motion through the official Even Hub SDK. See [docs/g2-hardware.md](docs/g2-hardware.md).
 - **Cocoon (TON confidential compute)** — private answers to "who / what / when" questions, grounded only in family-entered facts, through a server-only OpenAI-compatible adapter. See [docs/integrations.md](docs/integrations.md).
 
@@ -55,7 +57,8 @@ Real-day fallback scenarios and competitor research are documented in [Real day 
 | G2 companion app (`/g2`, `.ehpk` package) | Built; tested with an instrumented bridge |
 | Reminder engine, 15-minute alerts, catch-up | Live (checked every minute) |
 | Pairing and tap-to-Telegram confirmation | Built and tested end to end |
-| Telegram bot linking | Pending platform connection |
+| Telegram bot linking | Connected; real `/start` reply received |
+| Email backup alerts | Built and tested; live delivery awaits sender DNS verification and mailbox approval |
 | Live Cocoon endpoint | Pending client access — answers labelled `COCOON AI · DEMO` |
 | Physical G2 / R1 verification | Pending hardware access |
 
@@ -96,6 +99,7 @@ No keys are stored in this repository. Server-side settings:
 | Variable | Purpose |
 | --- | --- |
 | `TELEGRAM_API_KEY` | Telegram bot connection (provided by the connector) |
+| `LOVABLE_API_KEY` | Server-only connector and managed email access (runtime configuration) |
 | `COCOON_BASE_URL` | HTTPS URL of a running Cocoon client |
 | `COCOON_API_KEY` | Credential for that client |
 | `COCOON_MODEL` | Optional model name (default `Qwen/Qwen3-32B`) |

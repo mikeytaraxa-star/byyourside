@@ -8,6 +8,7 @@ ByYourSide handles intimate information — medication, addresses, family names.
 - **Private storage** — care circles, reminders, people and pairing tokens live in tables with row-level security and no anonymous read access; only server code can access them.
 - **Verified entry points** — the Telegram webhook checks Telegram's secret-token header; the reminder job rejects unauthenticated calls; glasses requests require a device token.
 - **Honest care status** — daily summaries distinguish a received tap or `/done` from verified medication use. Important-reminder streaks reset on same-day confirmation and never become a medical-risk assessment.
+- **Email backup** — the inbox owner approves reminder details using a single-use, hashed code within 15 minutes, in the same Telegram chat/account that requested it. Approval commands are redacted before private event storage. Only an approved inbox receives missed-reminder email; removal and managed suppression stop further feature sends. Email is not an emergency channel and does not prove anyone has read an alert.
 - **Pairing** — 10-character codes (~8×10^14 combinations) are single-use and expire after 15 minutes; device tokens can be revoked.
 - **Microphone** — opt-in with explicit consent, captured locally, never uploaded, stopped after 20 seconds and discarded.
 - **Location & motion** — read only with consent through Even App; the browser demo uses fixed sample values. Motion stays on the phone.

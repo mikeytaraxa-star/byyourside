@@ -6,6 +6,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { isValidTimeZone, localClock, parseDone } from "@/lib/reminder-alerts";
 import { formatPairCode, isPairCommand, newPairCode, PAIR_TTL_MINUTES } from "@/lib/pairing";
 import { ageLabel, isFindMeCommand, isFresh, mapsLink, venueBody } from "@/lib/findme";
+import { parseEmailCommand } from "@/lib/email-alerts";
 
 const messageSchema = z
   .object({
@@ -89,6 +90,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const message = update.message ?? update.edited_message;
         if (!message?.text) return Response.json({ ok: true, ignored: true });
 
+        // Approval codes are secrets: persist only a digest for command deduplication,
+        // never the command's plaintext code in the Telegram event or raw payload.
+        const emailCommand = parseEmailCommand(message.text);
+        const storedText = emailCommand?.kind === "verify"
+          ? `/email verify [${createHash("sha256").update(emailCommand.code).digest("hex")}]`
+          : message.text;
+        const storedUpdate = {
+          ...update,
+          ...(update.message ? { message: { ...update.message, text: storedText } } : {}),
+          ...(update.edited_message ? { edited_message: { ...update.edited_message, text: storedText } } : {}),
+        } as unknown as Json;
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const chatId = message.chat.id;
         const { data: stored, error: updateError } = await supabaseAdmin
@@ -98,8 +111,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               update_id: update.update_id,
               chat_id: chatId,
               telegram_user_id: message.from?.id ?? null,
-              text: message.text,
-              raw_update: update as unknown as Json,
+              text: storedText,
+              raw_update: storedUpdate,
             },
             { onConflict: "update_id", ignoreDuplicates: true },
           )
@@ -113,7 +126,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           .from("telegram_updates")
           .select("update_id")
           .eq("chat_id", chatId)
-          .eq("text", message.text)
+          .eq("text", storedText)
           .neq("update_id", update.update_id)
           .gte("created_at", new Date(Date.now() - 10_000).toISOString())
           .limit(1);
@@ -132,9 +145,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const text = message.text.trim();
         let reply = "";
-        if (text === "/start" || text === "/help") {
+        if (emailCommand) {
+          const { handleEmailCommand } = await import("@/lib/email-alerts.server");
+          try {
+            reply = await handleEmailCommand({ client: supabaseAdmin, chatId, senderId: message.from?.id, updateId: update.update_id, rawUpdate: storedUpdate, command: emailCommand });
+          } catch {
+            reply = "I couldn't read or save your email settings. Please try again later; Telegram alerts continue.";
+          }
+        } else if (text === "/start" || text === "/help") {
           reply =
-            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nMark medication or another important reminder:\n/critical 08:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nConnect the glasses:\n/pair\n\nFind Your Loved One (glasses location):\n/findme\n\nSet your time zone:\n/timezone Europe/Berlin\n\nDaily family summary (default 21:00):\n/summary 21:00 or /summary off\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
+            "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nMark medication or another important reminder:\n/critical 08:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nConnect the glasses:\n/pair\n\nFind Your Loved One (glasses location):\n/findme\n\nSet your time zone:\n/timezone Europe/Berlin\n\nDaily family summary (default 21:00):\n/summary 21:00 or /summary off\n\nEmail backup for missed reminders:\n/email your-address@example.com\nApprove with the code emailed to an inbox you own. /email checks status; /email off removes the backup inbox.\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
         } else if (/^\/timezone(?:@\w+)?\s+/i.test(text)) {
           const tz = text.replace(/^\/timezone(?:@\w+)?\s+/i, "").trim();
           if (!isValidTimeZone(tz)) reply = "⚠️ I don't know that time zone. Try /timezone Europe/Berlin or /timezone America/New_York";

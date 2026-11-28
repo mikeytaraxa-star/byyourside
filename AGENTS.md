@@ -45,3 +45,4 @@ use the editor.
 - Brand artwork ships as a vector traced from the approved raster mark; keep public/favicon.png (copied into the Even Hub package) and public/favicon.svg derived from the same mark so web and hardware show one logo.
 - Keep the judge-facing narrated film on its own /demovideo route with CDN asset pointers and native video controls so the shareable page stays lightweight and playback remains user-controlled.
 - App emails use the server-only managed send helper and React Email registry; preview routes authenticate themselves, and no email queues or database tables are created because delivery and unsubscribe handling are managed externally.
+- Family email enrollment enriches existing private Telegram command events with hashed, expiring mailbox-approval results; read the latest event per chat and send fixed alert templates in parallel with Telegram using event-derived idempotency keys, avoiding email-schema migrations or queues.

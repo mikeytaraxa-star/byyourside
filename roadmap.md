@@ -1,7 +1,8 @@
 # ByYourSide live integrations
 
 - [x] Prepare managed email sending and a family reminder-alert template for notify.byside.here; email sending remains server-only, with no email queue or database tables.
-- [ ] Verify live email delivery — blocked by sender-domain DNS verification and recipient/alert-trigger setup; preparing infrastructure alone does not enable backup alerts.
+- [x] Add /email enrollment with mailbox verification and simultaneous email delivery for 15-minute and critical Telegram alerts; docs updated, full handler flow tested with isolated service doubles, protected runtime endpoints and rendered templates checked.
+- [ ] Verify live email delivery to the user's supplied test inbox — blocked by sender-domain DNS verification, publishing and the user's mailbox approval; keep the inbox out of source and docs.
 
 - [x] Keep ByYourSide free and remove proposed prices, subscriptions and payer models from judge-facing materials.
 

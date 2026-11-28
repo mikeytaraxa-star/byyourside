@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import { template as reminderAlert } from './reminder-alert'
+import { template as verifyEmail } from './verify-email'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -20,4 +21,5 @@ export interface TemplateEntry {
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'reminder-alert': reminderAlert,
+  'verify-email': verifyEmail,
 }

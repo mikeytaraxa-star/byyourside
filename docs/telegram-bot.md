@@ -10,6 +10,9 @@ Bot: <https://t.me/bysappbot>
 | `/critical HH:MM text` | `/critical 08:00 Blue pill — with water` | Adds an important reminder with second-consecutive-day escalation. |
 | `/summary HH:MM` | `/summary 21:00` | Sets the daily family-summary time in the circle's time zone. |
 | `/summary off` | `/summary off` | Disables the daily summary; `/summary` shows the current setting. |
+| `/email address` | `/email anna@example.com` | Sends mailbox approval to an inbox you own; replace the example address. |
+| `/email verify CODE` | `/email verify XXXXX-XXXXX` | Approves the inbox in the same chat/account within 15 minutes. |
+| `/email` / `/email off` | `/email` | Shows status / removes the chat's backup inbox. |
 | `/person Name \| relation \| detail` | `/person Anna \| daughter \| lives in New York` | Adds a familiar person. |
 | `/ask question` | `/ask Who is Anna?` | Answer grounded in the care circle (Cocoon, or labelled demo). |
 | `/done HH:MM` | `/done 08:00` | Marks today's reminder done and stops the alert. |
@@ -23,8 +26,11 @@ Bot: <https://t.me/bysappbot>
 - **Second consecutive day** — `/critical` reminders produce a stronger SECOND DAY alert if still unconfirmed; a same-day confirmation resets the streak.
 - **Daily summary** — at 21:00 local time by default, listing confirmed, not-confirmed and upcoming reminders. `/summary HH:MM` changes it and `/summary off` disables it.
 - **On glasses tap** — "✅ done" is posted to the family chat.
+- **Email backup** — after mailbox approval, the 15-minute and consecutive-day important-reminder alerts start email and Telegram sends in the same check. Due nudges and summaries remain Telegram-only. Delivery times vary between providers; an inbox or Telegram notification can still be muted.
 
 “Confirmed” records a tap or `/done`; it does not verify medication ingestion. See [real-day fallback scenarios](real-day-and-market.md) for showers, charging, forgotten glasses and offline behavior.
+
+Email uses `notify.byside.here` and requires verified sender DNS. If verification is pending, `/email` explains this and does not enable the inbox; try again after verification. Only approved inboxes receive reminder details, one per chat. See [app emails](app-emails.md) for consent, suppression and delivery limits.
 
 ## /findme
 

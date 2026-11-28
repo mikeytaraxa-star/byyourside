@@ -6,9 +6,10 @@ interface Props {
   reminder?: string
   scheduledTime?: string
   important?: boolean
+  missedDays?: number
 }
 
-function ReminderAlert({ reminder = 'A reminder', scheduledTime, important = false }: Props) {
+function ReminderAlert({ reminder = 'A reminder', scheduledTime, important = false, missedDays = 1 }: Props) {
   const title = important ? 'An important reminder needs a check-in' : 'A reminder has not been confirmed'
   return (
     <Html lang="en" dir="ltr">
@@ -19,6 +20,7 @@ function ReminderAlert({ reminder = 'A reminder', scheduledTime, important = fal
           <Text style={styles.brand}>ByYourSide</Text>
           <Heading style={styles.heading}>{title}</Heading>
           <Text style={styles.text}>{reminder}{scheduledTime ? ` — scheduled for ${scheduledTime}` : ''}.</Text>
+          {important && missedDays >= 2 && <Text style={styles.text}>This important reminder has remained unconfirmed for {missedDays} consecutive days. Please contact Your Loved One directly or ask someone nearby to check in.</Text>}
           <Text style={styles.text}>Please check in with Your Loved One. No confirmation has been recorded; this does not prove the task was missed or medication was not taken.</Text>
           <Hr style={styles.rule} />
           <Text style={styles.note}>ByYourSide is a reminder companion, not an emergency service. If you believe there is immediate danger, contact local emergency services.</Text>
