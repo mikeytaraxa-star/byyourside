@@ -9,6 +9,8 @@ export function SiteFooter() {
           <img src={logo.url} alt="" className="h-6 w-6" /> ByYourSide
         </Link>
         <nav className="flex flex-wrap gap-x-6 gap-y-2">
+          <Link to="/family" className="hover:text-primary">Family workspace</Link>
+          <Link to="/companion" className="hover:text-primary">Loved One view</Link>
           <Link to="/install" className="hover:text-primary">Install & how to use</Link>
           <Link to="/docs" className="hover:text-primary">Docs</Link>
           <Link to="/demovideo" className="hover:text-primary">Demo video</Link>

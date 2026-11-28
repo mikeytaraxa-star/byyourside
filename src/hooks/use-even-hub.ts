@@ -16,6 +16,7 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
   const [location, setLocation] = useState<AppLocation | null>(null);
   const [motion, setMotion] = useState<MotionSample | null>(null);
   const [sensorsActive, setSensorsActive] = useState(false);
+  const [battery, setBattery] = useState<number | null>(null);
   const bridgeRef = useRef<EvenAppBridge | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const displayRef = useRef(display);
@@ -53,6 +54,7 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
     setLocation(null);
     setMotion(null);
     setSensorsActive(false);
+    setBattery(null);
     setMessage("Sensor stream stopped.");
   }, []);
 
@@ -135,6 +137,7 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
       });
       const unsubscribeLocation = bridge.onAppLocationChanged(setLocation);
       const unsubscribeDevice = bridge.onDeviceStatusChanged((device) => {
+        if (typeof device.batteryLevel === 'number' && device.batteryLevel >= 0 && device.batteryLevel <= 100) setBattery(device.batteryLevel);
         if (device.connectType === sdk.DeviceConnectType.Disconnected || device.connectType === sdk.DeviceConnectType.ConnectionFailed) {
           onGestureRef.current("release", "G2 input");
           stop();
@@ -263,7 +266,7 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
     cleanupRef.current = () => clearInterval(interval);
   }, []);
 
-  return { status, message, location, motion, sensorsActive, setSensors, readStorage, writeStorage, connect, simulate, stop, startAudio, stopAudio };
+  return { status, message, location, motion, battery, sensorsActive, setSensors, readStorage, writeStorage, connect, simulate, stop, startAudio, stopAudio };
 }
 
 export type EvenHubController = ReturnType<typeof useEvenHub>;

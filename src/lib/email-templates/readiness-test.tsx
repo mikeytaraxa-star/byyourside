@@ -1,0 +1,5 @@
+import * as React from 'react';
+import {Html,Head,Preview,Body,Container,Heading,Text} from '@react-email/components';
+import type {TemplateEntry} from './registry';
+function ReadinessTest({requestedBy='Your family'}:{requestedBy?:string}){return <Html lang="en"><Head/><Preview>ByYourSide notification test requested by your family.</Preview><Body style={{backgroundColor:'#ffffff',fontFamily:'Arial, sans-serif',color:'#302820'}}><Container style={{maxWidth:'560px',padding:'32px 24px'}}><Text style={{color:'#ad5e26',fontWeight:700}}>ByYourSide</Text><Heading>Can your family reach you?</Heading><Text>{requestedBy} requested this notification readiness test.</Text><Text>This is a test, not a missed reminder or emergency. You can acknowledge it in your family workspace.</Text><Text>Receiving an email does not guarantee urgent notifications will be seen. Please also check your Telegram notification settings.</Text></Container></Body></Html>;}
+export const template={component:ReadinessTest,subject:'ByYourSide — your requested notification test',displayName:'Family notification readiness test',previewData:{requestedBy:'Anna'}} satisfies TemplateEntry;

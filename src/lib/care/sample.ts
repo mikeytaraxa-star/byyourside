@@ -1,0 +1,9 @@
+import {defaultPreferences,type CareWorkspace} from './types';
+export function sampleWorkspace():CareWorkspace {
+  const date=new Date().toISOString().slice(0,10);
+  return {circle:{id:'11111111-1111-4111-8111-111111111111',display_name:'Your Loved One',timezone:'UTC',summary_time:'21:00',preferences:{...defaultPreferences,greeting:'Good morning. Anna is visiting this afternoon.'}},member:{id:'22222222-2222-4222-8222-222222222222',member_name:'Anna',role:'owner'},date,minute:8*60+5,
+    reminders:[{id:'33333333-3333-4333-8333-333333333333',local_time:'08:00',effective_time:'08:00',title:'Take your morning medication',detail:'Follow the instructions in your care plan.',critical:true,snooze_minutes:0,date_override:null,state:'pending',version:0,step:0},{id:'44444444-4444-4444-8444-444444444444',local_time:'14:00',effective_time:'14:00',title:'Anna is visiting',detail:'Your daughter will meet you at home.',critical:false,snooze_minutes:0,date_override:null,state:'pending',version:0,step:0}],
+    routines:[{id:'55555555-5555-4555-8555-555555555555',title:'A gentle start',local_time:'08:15',steps:['Sit comfortably at the table.','Have a glass of water.','Your breakfast is ready.'],enabled:true,date_override:null,progress:0}],
+    notes:[{id:'66666666-6666-4666-8666-666666666666',label:'Anna',answer:'Anna is your daughter. She visits this afternoon at 14:00.',category:'person',phone:'',media_path:null,media_kind:null,updated_at:new Date().toISOString()},{id:'77777777-7777-4777-8777-777777777777',label:'Keys',answer:'The bowl beside the front door.',category:'object',phone:'',media_path:null,media_kind:null,updated_at:new Date().toISOString()}],
+    members:[{id:'22222222-2222-4222-8222-222222222222',member_name:'Anna',role:'owner',direct_chat_id:null,notify_order:0,revoked_at:null}],events:[],history:[],devices:[],capabilities:{cocoon:false,speech:false,battery:false,email:false}};
+}

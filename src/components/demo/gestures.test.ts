@@ -8,10 +8,11 @@ describe("G2 and R1 input", () => {
   });
   it("does not confuse missing event type with a confirmation", () => { expect(decodeGesture({ textEvent: { containerID: 2 } })).toBeNull(); });
   it("does not route IMU samples as taps", () => { expect(decodeGesture({ sysEvent: { eventType: 8 } })).toBeNull(); });
-  it("registers four distinct valid menu actions", () => {
-    expect(G2_MENU.map((m) => m.itemID)).toEqual([1, 2, 3, 4]);
+  it("keeps existing actions stable while adding everyday choices", () => {
+    expect(G2_MENU.map((m) => m.itemID)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     expect(decodeGesture({ menuItemClickEvent: { itemID: 3 } })).toEqual({ gesture: "menu-ask", source: "G2 menu" });
   });
+  it('routes help without treating it as done', () => { expect(decodeGesture({menuItemClickEvent:{itemID:6}})?.gesture).toBe('menu-help'); });
   it("cycles reminders in both directions", () => {
     expect(browseIndex(-1, 1, 2)).toBe(0); expect(browseIndex(0, -1, 2)).toBe(1); expect(browseIndex(1, 1, 2)).toBe(0); expect(browseIndex(0, 1, 0)).toBe(-1);
   });

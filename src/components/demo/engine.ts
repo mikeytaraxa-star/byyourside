@@ -1,4 +1,4 @@
-export type Reminder = { id: string; time: string; text: string; detail?: string; critical?: boolean; status: "pending" | "done" | "missed" };
+export type Reminder = { id: string; time: string; text: string; detail?: string; critical?: boolean; status: "pending" | "done" | "missed"; careState?: 'pending'|'done'|'postponed'|'help'|'declined'; snoozeMinutes?: number; version?: number };
 export type Person = { name: string; relation: string; note: string };
 export type Msg = { id: string; from: "family" | "bot"; text: string };
 

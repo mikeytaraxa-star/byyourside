@@ -42,6 +42,10 @@ ByYourSide puts one short, warm prompt in the corner of the wearer's view, at th
 
 Real-day fallback scenarios and competitor research are documented in [Real day & market research](docs/real-day-and-market.md). ByYourSide is intended to remain free for everyone.
 
+## Everyday companion
+
+Open `/family` for the private family editor and `/companion` for phone-first use. Send `/family` privately to @bysappbot for a single-use access code. New care choices, routines, reassurance, check-in ownership, quiet periods, private media and access controls are described in [Everyday companion](docs/everyday-companion.md), including release limitations.
+
 ## Integrations
 
 - **Telegram** — family interface, pairing, nudges, alerts and confirmations via a verified webhook. See [docs/telegram-bot.md](docs/telegram-bot.md).

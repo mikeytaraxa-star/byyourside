@@ -12,6 +12,8 @@ type Row = Record<string, unknown>
 function serviceStore() {
   const tables: Record<string, Row[]> = {
     telegram_updates: [],
+    care_members: [{ id: 'member', circle_id: 'circle', telegram_user_id: 9, role: 'owner', revoked_at: null, notify_order: 0, direct_chat_id: null }],
+    care_occurrences: [], care_events: [], g2_devices: [],
     care_circles: [{ id: 'circle', telegram_chat_id: 7, summary_time: 'off', timezone: 'UTC', summary_sent_on: null }],
     reminders: [{ id: 'pill', circle_id: 'circle', local_time: '08:00:00', title: 'Blue pill', detail: null, nudged_on: null, alerted_on: null, confirmed_on: null, critical: false, missed_streak: 0, last_missed_on: null }],
   }
@@ -42,6 +44,9 @@ function serviceStore() {
       select: (_columns: string) => query,
       eq: (key: string, value: unknown) => { filters.push(row => pathValue(row, key) === value); return query },
       neq: (key: string, value: unknown) => { filters.push(row => pathValue(row, key) !== value); return query },
+      is: (key: string, value: unknown) => { filters.push(row => value === null ? pathValue(row, key) == null : pathValue(row, key) === value); return query },
+      in: (key: string, values: unknown[]) => { filters.push(row => values.includes(pathValue(row, key))); return query },
+      lt: (key: string, value: string) => { filters.push(row => String(pathValue(row, key)) < value); return query },
       gte: (key: string, value: string) => { filters.push(row => String(pathValue(row, key)) >= value); return query },
       not: (key: string, _operator: string, _value: unknown) => { filters.push(row => pathValue(row, key) != null); return query },
       or: (expression: string) => { filters.push(row => expression.split(',').some(condition => {

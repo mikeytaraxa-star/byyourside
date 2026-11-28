@@ -95,7 +95,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const emailCommand = parseEmailCommand(message.text);
         const storedText = emailCommand?.kind === "verify"
           ? `/email verify [${createHash("sha256").update(emailCommand.code).digest("hex")}]`
-          : message.text;
+          : /^\/join(?:@\w+)?\s+/i.test(message.text)
+            ? `/join [${createHash("sha256").update(message.text).digest("hex")}]`
+            : message.text;
         const storedUpdate = {
           ...update,
           ...(update.message ? { message: { ...update.message, text: storedText } } : {}),
@@ -145,7 +147,25 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const text = message.text.trim();
         let reply = "";
-        if (emailCommand) {
+        // A Telegram sender is trusted only after the webhook signature was checked.
+        // The circle's first creator owns it; other relatives explicitly accept invitations.
+        const { data: existingMembers } = await supabaseAdmin.from("care_members").select("id").eq("circle_id", circle.id).limit(1);
+        if (!existingMembers?.length && message.from?.id) {
+          await supabaseAdmin.from("care_members").upsert({ circle_id: circle.id, telegram_user_id: message.from.id, role: "owner", member_name: typeof message.from["first_name"] === "string" ? message.from["first_name"].slice(0, 80) : "Family member", direct_chat_id: chatId > 0 ? chatId : null }, { onConflict: "circle_id,telegram_user_id", ignoreDuplicates: true });
+        }
+        if (text === "/start" && chatId > 0 && message.from?.id) {
+          await supabaseAdmin.from("care_members").update({ direct_chat_id: chatId }).eq("telegram_user_id", message.from.id).is("revoked_at", null);
+        }
+        const { data: membership } = await supabaseAdmin.from("care_members").select("role").eq("circle_id", circle.id).eq("telegram_user_id", message.from?.id ?? 0).is("revoked_at", null).maybeSingle();
+        const accessCommand = /^\/(start|help|family|join)(?:@\w+)?(?:\s|$)/i.test(text);
+        const careAction = /^\/(later|needhelp|nottoday|again)(?:@\w+)?\s/i.test(text);
+        const readCommand = /^\/(findme|ask)(?:@\w+)?(?:\s|$)/i.test(text) || careAction;
+        if (!accessCommand && (!membership || (!readCommand && membership.role === "viewer"))) {
+          reply = "Your family owner must grant permission for this command. Ask them for an invitation in /family.";
+        } else if (/^\/(family|join|later|needhelp|nottoday|again)(?:@\w+)?(?:\s|$)/i.test(text)) {
+          const { telegramCareCommand } = await import("@/lib/care/telegram.server");
+          reply = await telegramCareCommand(supabaseAdmin, circle.id, message.from?.id, chatId, text, typeof message.from?.["first_name"] === "string" ? message.from["first_name"] : "Family member") ?? "Check the command and try again.";
+        } else if (emailCommand) {
           const { handleEmailCommand } = await import("@/lib/email-alerts.server");
           try {
             reply = await handleEmailCommand({ client: supabaseAdmin, chatId, senderId: message.from?.id, updateId: update.update_id, rawUpdate: storedUpdate, command: emailCommand });
@@ -155,6 +175,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         } else if (text === "/start" || text === "/help") {
           reply =
             "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nMark medication or another important reminder:\n/critical 08:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nConnect the glasses:\n/pair\n\nFind Your Loved One (glasses location):\n/findme\n\nSet your time zone:\n/timezone Europe/Berlin\n\nDaily family summary (default 21:00):\n/summary 21:00 or /summary off\n\nEmail backup for missed reminders:\n/email your-address@example.com\nApprove with the code emailed to an inbox you own. /email checks status; /email off removes the backup inbox.\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
+          reply += "\n\nFamily editor and routines:\n/family\n\nOther reminder choices:\n/later 14:00 15\n/needhelp 14:00\n/nottoday 14:00\n/again 14:00\n\nImportant postponement requires family permission. Help and Not today never mean done.";
         } else if (/^\/timezone(?:@\w+)?\s+/i.test(text)) {
           const tz = text.replace(/^\/timezone(?:@\w+)?\s+/i, "").trim();
           if (!isValidTimeZone(tz)) reply = "⚠️ I don't know that time zone. Try /timezone Europe/Berlin or /timezone America/New_York";
@@ -205,14 +226,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const wanted = parseDone(text)?.time ?? null;
           const { data: tzRow } = await supabaseAdmin.from("care_circles").select("timezone").eq("id", circle.id).single();
           const { date, minute } = localClock(new Date(), tzRow?.timezone ?? "UTC");
-          const { data: rows } = await supabaseAdmin.from("reminders").select("id, local_time, title, confirmed_on").eq("circle_id", circle.id).order("local_time");
+          const { data: rows } = await supabaseAdmin.from("reminders").select("id, local_time, title, confirmed_on, date_override").eq("circle_id", circle.id).is("deleted_at", null).order("local_time").limit(100);
           const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
-          const open = (rows ?? []).filter((row) => row.confirmed_on !== date && toMin(row.local_time) <= minute);
+          const open = (rows ?? []).filter((row) => (!row.date_override || row.date_override === date) && row.confirmed_on !== date && toMin(row.local_time) <= minute);
           const match = wanted ? open.find((row) => row.local_time.slice(0, 5) === wanted) : open[open.length - 1];
           if (!match) reply = wanted ? `I couldn't find an open reminder at ${wanted} today.` : "There's nothing due to confirm right now. 💚";
           else {
-            const { error } = await supabaseAdmin.from("reminders").update({ confirmed_on: date, confirmed_at: new Date().toISOString(), status: "done", missed_streak: 0, last_missed_on: null }).eq("id", match.id);
-            reply = error ? `⚠️ I couldn't confirm that: ${error.message}` : `✅ ${match.title} (${match.local_time.slice(0, 5)}) is done. Thank you!`;
+            const { applyOccurrence } = await import("@/lib/care/service.server");
+            try {
+              await applyOccurrence(supabaseAdmin, circle.id, { reminderId: match.id, action: "done", key: crypto.randomUUID(), date, minutes: 15 }, "Family member");
+              reply = `✅ ${match.title} (${match.local_time.slice(0, 5)}) is confirmed. Thank you!`;
+            } catch { reply = "I couldn't confirm that. Please try again."; }
           }
         } else if (/^\/ask\s+/i.test(text)) {
           const question = text.replace(/^\/ask\s+/i, "").slice(0, 500);

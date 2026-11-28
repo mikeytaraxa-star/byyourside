@@ -55,6 +55,12 @@ bunx evenhub qr --url http://YOUR-LAN-IP:8000
 
 Native display uses a 576 × 288 coordinate space, three nonoverlapping text containers, bounded text, and a latest-value serialized write queue. Long reminder content is truncated **only on the glasses**; full content remains available on the phone. G2 is monochrome, so website colors/3D imagery are not sent to the device.
 
+## Everyday choices
+
+The native menu adds A little later, I need help, Not today, Show again and Routines. Important postponement requires a family-approved limit. Pairing brings family routines and reassurance notes to the phone/glasses companion. Reminder actions are retained in an offline outbox; previous-day actions are rejected for review rather than confirming today. Routine steps currently require successful sync. Paired schedules are edited in the family workspace, not a second local schedule. Optional reported battery appears only if the SDK supplies it; native font-size changes are unsupported.
+
+Location sharing requires both family permission in Settings and device permission. Owners can revoke lost devices from `/family/settings`. See [Everyday companion](everyday-companion.md) for current release limitations.
+
 ## Limits and validation
 
 - Local schedule: up to 50 reminders, up to 300 input characters per reminder. Daily completion resets on the phone's local calendar rollover. Glasses scheduling runs only while the application is active; no wake-up or background glasses delivery is promised. Independently, the server-side Telegram job sends due nudges, 15-minute family alerts, important-reminder second-day escalation and daily summaries.

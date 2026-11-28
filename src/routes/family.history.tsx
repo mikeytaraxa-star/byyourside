@@ -1,0 +1,3 @@
+import {createFileRoute} from '@tanstack/react-router';
+import {HistoryPage} from '@/components/care/CarePages';
+export const Route=createFileRoute('/family/history')({head:()=>({meta:[{title:'ByYourSide — Care change history'},{name:'description',content:'Review saved care changes and recover earlier instructions safely.'},{property:'og:title',content:'ByYourSide — Care change history'},{property:'og:description',content:'Review saved care changes and recover earlier instructions safely.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'}]}),component:HistoryPage});

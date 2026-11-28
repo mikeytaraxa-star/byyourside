@@ -1,0 +1,3 @@
+import {createFileRoute} from '@tanstack/react-router';
+import {SettingsPage} from '@/components/care/CarePages';
+export const Route=createFileRoute('/family/settings')({head:()=>({meta:[{title:'ByYourSide — Comfort and family permissions'},{name:'description',content:'Manage reading comfort, quiet periods and private family access.'},{property:'og:title',content:'ByYourSide — Comfort and family permissions'},{property:'og:description',content:'Manage reading comfort, quiet periods and private family access.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'}]}),component:SettingsPage});

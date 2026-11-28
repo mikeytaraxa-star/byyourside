@@ -14,8 +14,10 @@ export const Route = createFileRoute('/api/public/g2/sync')({
         const { supabaseAdmin, circleId, deviceId } = device;
         const body = await request.json().catch(() => ({})) as Record<string, unknown>;
         const loc = validLocation(body['location']);
-        const { data: circle } = await supabaseAdmin.from('care_circles').select('display_name, timezone, telegram_chat_id, findme_requested_at').eq('id', circleId).single();
-        if (loc) {
+        const { data: circle } = await supabaseAdmin.from('care_circles').select('display_name, timezone, telegram_chat_id, findme_requested_at, preferences').eq('id', circleId).single();
+        const { preferences, loadCare } = await import('@/lib/care/service.server');
+        const prefs = preferences(circle?.preferences ?? {});
+        if (loc && prefs.locationSharing) {
           const at = new Date().toISOString();
           await supabaseAdmin.from('g2_devices').update({ last_lat: loc.lat, last_lng: loc.lng, last_accuracy: loc.accuracy, last_location_at: at }).eq('id', deviceId);
           if (circle?.findme_requested_at && circle.telegram_chat_id) {
@@ -29,15 +31,16 @@ export const Route = createFileRoute('/api/public/g2/sync')({
           }
         }
         const { date } = localClock(new Date(), circle?.timezone ?? 'UTC');
-        const [{ data: reminders }, { data: people }] = await Promise.all([
-          supabaseAdmin.from('reminders').select('id, local_time, title, detail, critical, confirmed_on').eq('circle_id', circleId).order('local_time').limit(50),
-          supabaseAdmin.from('people').select('name, relation, note').eq('circle_id', circleId).limit(50),
-        ]);
+        const workspace = await loadCare(supabaseAdmin, circleId, {id: deviceId, role: 'viewer', member_name: 'Your Loved One'});
         return json({
           ok: true,
           name: circle?.display_name ?? 'Your Loved One',
-          reminders: (reminders ?? []).map(r => ({ id: r.id, time: r.local_time.slice(0, 5), text: r.title, ...(r.detail ? { detail: r.detail } : {}), ...(r.critical ? { critical: true } : {}), status: r.confirmed_on === date ? 'done' : 'pending' })),
-          people: people ?? [],
+          date,
+          reminders: workspace.reminders.map(r => ({ id: r.id, time: r.effective_time, text: r.title, ...(r.detail ? { detail: r.detail } : {}), ...(r.critical ? { critical: true } : {}), status: r.state === 'done' ? 'done' : 'pending', careState: r.state, snoozeMinutes: r.snooze_minutes, version: r.version })),
+          people: workspace.notes.filter(n => n.category === 'person').map(n => ({name:n.label,relation:'familiar person',note:n.answer})),
+          notes: workspace.notes,
+          routines: workspace.routines,
+          preferences: prefs,
           findme: Boolean(circle?.findme_requested_at),
         });
       },

@@ -1,0 +1,3 @@
+import {createFileRoute} from '@tanstack/react-router';
+import {PeoplePage} from '@/components/care/CarePages';
+export const Route=createFileRoute('/family/people')({head:()=>({meta:[{title:'ByYourSide — Familiar people and reassurance'},{name:'description',content:'Private family notes, familiar people and reassuring answers.'},{property:'og:title',content:'ByYourSide — Familiar people and reassurance'},{property:'og:description',content:'Private family notes, familiar people and reassuring answers.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'}]}),component:PeoplePage});

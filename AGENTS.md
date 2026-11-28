@@ -46,3 +46,8 @@ use the editor.
 - Keep the judge-facing narrated film on its own /demovideo route with CDN asset pointers and native video controls so the shareable page stays lightweight and playback remains user-controlled.
 - App emails use the server-only managed send helper and React Email registry; preview routes authenticate themselves, and no email queues or database tables are created because delivery and unsubscribe handling are managed externally.
 - Family email enrollment enriches existing private Telegram command events with hashed, expiring mailbox-approval results; read the latest event per chat and send fixed alert templates in parallel with Telegram using event-derived idempotency keys, avoiding email-schema migrations or queues.
+
+- Keep everyday care models and rules in src/lib/care; service-only tables are accessed through verified Telegram family sessions or paired-device handlers, always scoped to the resolved circle, so editors and wearers share one schedule.
+- Store reminder occurrence actions independently from recurring templates and deduplicate each durable action; reject old-day confirmations so reconnects cannot confirm the wrong medication occurrence.
+- Telegram Mini App identity uses freshness-checked production Ed25519 signatures; never trust unsigned launch identities or expose a bot token to validate them.
+- Family media belongs in the private care-family-media bucket with scoped short-lived viewing links; do not bundle it with public branding or the hardware package.

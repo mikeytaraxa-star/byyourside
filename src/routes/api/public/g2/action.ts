@@ -1,0 +1,4 @@
+import {createFileRoute} from '@tanstack/react-router';
+import {deviceCircle,json,preflight} from '@/lib/g2-sync.server';
+import {actionSchema} from '@/lib/care/schemas';
+export const Route=createFileRoute('/api/public/g2/action')({server:{handlers:{OPTIONS:async()=>preflight(),POST:async({request})=>{const device=await deviceCircle(request);if(!device)return json({error:'unpaired'},401);const parsed=actionSchema.safeParse(await request.json().catch(()=>null));if(!parsed.success)return json({error:'Invalid action'},400);try{const {applyOccurrence}=await import('@/lib/care/service.server');return json(await applyOccurrence(device.supabaseAdmin,device.circleId,parsed.data,'Your Loved One'));}catch(error){return json({error:error instanceof Error?error.message:'Action unavailable'},400);}}}}});

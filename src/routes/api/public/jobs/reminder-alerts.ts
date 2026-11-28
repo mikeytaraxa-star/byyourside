@@ -15,7 +15,10 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { loadFamilyEmail, deliverReminderAlert } = await import("@/lib/email-alerts.server");
-        const { data: circles, error } = await supabaseAdmin.from("care_circles").select("id, telegram_chat_id, timezone, summary_time, summary_sent_on").order("id").limit(1000);
+        const { recordScheduledEvent, runCareAvailability } = await import("@/lib/care/alerts.server");
+        const { preferences } = await import("@/lib/care/service.server");
+        const { effectiveTime, inQuietPeriod } = await import("@/lib/care/rules");
+        const { data: circles, error } = await supabaseAdmin.from("care_circles").select("id, telegram_chat_id, timezone, summary_time, summary_sent_on, preferences").order("id").limit(1000);
         if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
         let sent = 0;
         let emailsSent = 0;
@@ -52,8 +55,16 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
             failures.push("Email preferences unavailable; Telegram alerts continue");
           }
           const { data: reminders } = await supabaseAdmin.from("reminders")
-            .select("id, local_time, title, detail, nudged_on, alerted_on, confirmed_on, critical, missed_streak, last_missed_on").eq("circle_id", circle.id).limit(50);
-          for (const action of alertActions(reminders ?? [], date, minute)) {
+            .select("id, local_time, title, detail, nudged_on, alerted_on, confirmed_on, critical, missed_streak, last_missed_on, date_override").eq("circle_id", circle.id).is("deleted_at", null).limit(100);
+          const { data: occurrences } = await supabaseAdmin.from("care_occurrences").select("reminder_id, state, postponed_minute").eq("circle_id", circle.id).eq("local_date", date).limit(100);
+          const current = (reminders ?? []).filter(r => !r.date_override || r.date_override === date).map(r => {
+            const occurrence = occurrences?.find(o => o.reminder_id === r.id);
+            return { ...r, care_state: occurrence?.state ?? 'pending', effective_time: effectiveTime(r.local_time, occurrence?.postponed_minute ?? null) };
+          });
+          const pref = preferences(circle.preferences ?? {});
+          for (const action of alertActions(current, date, minute)) {
+            const currentReminder = current.find(r => r.id === action.id);
+            if (action.kind === 'nudge' && currentReminder && (inQuietPeriod(minute, pref, currentReminder.critical) || (!currentReminder.critical && pref.breakUntil && Date.parse(pref.breakUntil) > Date.now()))) continue;
             // Claim the reminder first so overlapping runs can never send the same message twice.
             const previous = (reminders ?? []).find((r) => r.id === action.id);
             const delivered = action.kind === "nudge"
@@ -74,6 +85,7 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
             if (result.emailStatus === "sent") emailsSent++;
             if (result.emailStatus === "suppressed") emailsSuppressed++;
             if (result.emailStatus === "failed") { emailsFailed++; failures.push("Email alert was not accepted; check email sending status"); }
+            await recordScheduledEvent(supabaseAdmin, circle.id, action.id, date, action.kind, action.text, result.telegramSent);
             if (!result.telegramSent) {
               failures.push("Telegram alert was not accepted");
               await supabaseAdmin.from("reminders").update({
@@ -86,12 +98,13 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
             const { data: claimed } = await supabaseAdmin.from("care_circles").update({ summary_sent_on: date })
               .eq("id", circle.id).or(`summary_sent_on.is.null,summary_sent_on.neq.${date}`).select("id");
             if (claimed?.length) {
-              const text = dailySummary(reminders ?? [], date, minute);
+              const text = dailySummary(current, date, minute);
               if (!await send(circle.telegram_chat_id, text)) {
                 await supabaseAdmin.from("care_circles").update({ summary_sent_on: circle.summary_sent_on }).eq("id", circle.id);
               }
             }
           }
+          await runCareAvailability(supabaseAdmin, circle.id);
         }
         return Response.json({ ok: failures.length === 0, sent, emailsSent, emailsSuppressed, emailsFailed, failures });
       },

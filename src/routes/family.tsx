@@ -1,0 +1,3 @@
+import {createFileRoute} from '@tanstack/react-router';
+import {FamilyLayout} from '@/components/care/CarePages';
+export const Route=createFileRoute('/family')({head:()=>({meta:[{title:'ByYourSide — private family workspace'},{name:'description',content:'A private family workspace for reminders, reassurance, and caregiver check-ins.'},{property:'og:title',content:'ByYourSide — family workspace'},{property:'og:description',content:'Familiar care, shared simply with your family.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'}],scripts:[{src:'https://telegram.org/js/telegram-web-app.js'}]}),component:FamilyLayout});

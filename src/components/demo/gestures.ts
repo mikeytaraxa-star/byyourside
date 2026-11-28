@@ -1,10 +1,15 @@
-export type Gesture = "tap" | "double-tap" | "swipe-up" | "swipe-down" | "hold" | "release" | "menu-done" | "menu-next" | "menu-ask" | "menu-today";
+export type Gesture = "tap" | "double-tap" | "swipe-up" | "swipe-down" | "hold" | "release" | "menu-done" | "menu-next" | "menu-ask" | "menu-today" | "menu-later" | "menu-help" | "menu-decline" | "menu-repeat" | "menu-routine";
 export type GestureSource = "Right temple" | "Left temple" | "R1 ring" | "G2 input" | "G2 menu";
 export const G2_MENU = [
   { itemID: 1, itemName: "Done" },
   { itemID: 2, itemName: "Next reminder" },
   { itemID: 3, itemName: "Ask a question" },
   { itemID: 4, itemName: "Today" },
+  { itemID: 5, itemName: "A little later" },
+  { itemID: 6, itemName: "I need help" },
+  { itemID: 7, itemName: "Not today" },
+  { itemID: 8, itemName: "Show again" },
+  { itemID: 9, itemName: "Routines" },
 ];
 
 // PB enum values from Even Hub SDK 0.0.16; this module is browser/SSR safe.
@@ -15,7 +20,7 @@ export function decodeGesture(event: {
   menuItemClickEvent?: { itemID?: number };
 }): { gesture: Gesture; source: GestureSource } | null {
   const menu = event.menuItemClickEvent?.itemID;
-  const menuActions: Record<number, Gesture> = { 1: "menu-done", 2: "menu-next", 3: "menu-ask", 4: "menu-today" };
+  const menuActions: Record<number, Gesture> = { 1: "menu-done", 2: "menu-next", 3: "menu-ask", 4: "menu-today", 5: "menu-later", 6: "menu-help", 7: "menu-decline", 8: "menu-repeat", 9: "menu-routine" };
   if (menu !== undefined) {
     const gesture = menuActions[menu];
     return gesture ? { gesture, source: "G2 menu" } : null;

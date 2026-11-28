@@ -12,9 +12,11 @@ export type AlertReminder = {
   critical: boolean;
   missed_streak: number;
   last_missed_on: string | null;
+  care_state?: string;
+  effective_time?: string;
 };
 export type AlertAction = { id: string; kind: 'nudge' | 'alert' | 'critical'; text: string; missedStreak?: number };
-export type SummaryReminder = Pick<AlertReminder, 'local_time' | 'title' | 'confirmed_on' | 'critical'>;
+export type SummaryReminder = Pick<AlertReminder, 'local_time' | 'title' | 'confirmed_on' | 'critical' | 'care_state' | 'effective_time'>;
 
 const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return (h ?? 0) * 60 + (m ?? 0); };
 
@@ -40,7 +42,8 @@ export function alertActions(reminders: AlertReminder[], today: string, minute: 
   const out: AlertAction[] = [];
   for (const r of reminders) {
     if (r.confirmed_on === today) continue;
-    const late = minute - toMin(r.local_time);
+    if (r.care_state === 'declined' && !r.critical) continue;
+    const late = minute - toMin(r.effective_time ?? r.local_time);
     const time = r.local_time.slice(0, 5);
     if (late >= ALERT_AFTER_MINUTES) {
       if (r.alerted_on === today) continue;
@@ -84,6 +87,7 @@ export function dailySummary(reminders: SummaryReminder[], today: string, minute
     ...confirmed.map(r => line(r, '✅')),
     ...missed.map(r => line(r, '⚠️')),
     ...upcoming.map(r => line(r, '⏳')),
+    ...reminders.filter(r => r.care_state && r.care_state !== 'pending' && r.care_state !== 'done').map(r => `${r.local_time.slice(0, 5)} ${r.title.slice(0, 60)} — ${r.care_state === 'help' ? 'Help requested' : r.care_state === 'declined' ? 'Declined (not confirmed)' : 'Postponed'}`),
     '',
     'Confirmed means a glasses tap or /done was received; it does not verify that medicine was taken.',
   ];

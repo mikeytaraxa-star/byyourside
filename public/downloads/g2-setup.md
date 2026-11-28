@@ -14,7 +14,7 @@ The offline installation package is available at `/downloads/byyourside-g2.ehpk`
 4. Add a reminder on the phone, or explicitly load the labeled sample schedule. Set a time at or before the current phone clock to test confirmation.
 5. Verify the same reminder appears on the physical display and a temple or ring tap marks it done on the phone.
 
-The web `/g2` view can inspect/edit a local schedule without a device; it does not claim that changes reached hardware. The standalone package uses Even App local storage so completion and reminders survive relaunch. Browser preview storage and installed app storage are separate. Neither syncs with Telegram yet.
+The web `/g2` view can inspect/edit a local schedule without a device; it does not claim that changes reached hardware. The standalone package uses Even App local storage so completion and reminders survive relaunch. Browser preview storage and installed app storage are separate. After entering a one-time `/pair` code, the app syncs family reminders and tap confirmations while open and online; offline it retains the last saved schedule.
 
 ## Install through Even Hub
 
@@ -55,10 +55,16 @@ bunx evenhub qr --url http://YOUR-LAN-IP:8000
 
 Native display uses a 576 × 288 coordinate space, three nonoverlapping text containers, bounded text, and a latest-value serialized write queue. Long reminder content is truncated **only on the glasses**; full content remains available on the phone. G2 is monochrome, so website colors/3D imagery are not sent to the device.
 
+## Everyday choices
+
+The native menu adds A little later, I need help, Not today, Show again and Routines. Important postponement requires a family-approved limit. Pairing brings family routines and reassurance notes to the phone/glasses companion. Reminder actions are retained in an offline outbox; previous-day actions are rejected for review rather than confirming today. Routine steps currently require successful sync. Paired schedules are edited in the family workspace, not a second local schedule. Optional reported battery appears only if the SDK supplies it; native font-size changes are unsupported.
+
+Location sharing requires both family permission in Settings and device permission. Owners can revoke lost devices from `/family/settings`. See [Everyday companion](everyday-companion.md) for current release limitations.
+
 ## Limits and validation
 
-- Local schedule: up to 50 reminders, up to 300 input characters per reminder. Daily completion resets on the phone's local calendar rollover. Scheduling runs only while the application is active; no wake-up, background delivery or missed-reminder family alert is promised.
-- Telegram sync is not connected. Existing private family tables remain locked and are not exposed to the installed app. Linking a real care circle needs a separate secure pairing feature.
+- Local schedule: up to 50 reminders, up to 300 input characters per reminder. Daily completion resets on the phone's local calendar rollover. Glasses scheduling runs only while the application is active; no wake-up or background glasses delivery is promised. Independently, the server-side Telegram job sends due nudges, 15-minute family alerts, important-reminder second-day escalation and daily summaries.
+- Telegram sync requires `/pair` and an open, online app. Existing private family tables remain locked and are exposed only through token-verified device endpoints, never as anonymous browser reads.
 - Cocoon is not configured. The hardware bundle makes **no AI requests** and contains no service credentials. Cocoon and Telegram remain server-side integrations; neither was replaced by another provider.
 - Normal browser, instrumented native bridge, package validation, persistence, and gesture tests are checked. A mocked bridge is not physical hardware verification. Final display legibility, touch behavior, ring delivery, sensor permissions and microphone audio must be checked on G2/R1.
 

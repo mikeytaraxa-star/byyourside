@@ -11,13 +11,25 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BreakdownRouteImport } from './routes/breakdown'
+import { Route as CompanionRouteImport } from './routes/companion'
 import { Route as DemovideoRouteImport } from './routes/demovideo'
 import { Route as DocsRouteImport } from './routes/docs'
+import { Route as FamilyRouteImport } from './routes/family'
 import { Route as G2RouteImport } from './routes/g2'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as FamilyIndexRouteImport } from './routes/family.index'
+import { Route as FamilyCheckinsRouteImport } from './routes/family.checkins'
+import { Route as FamilyHistoryRouteImport } from './routes/family.history'
+import { Route as FamilyPeopleRouteImport } from './routes/family.people'
+import { Route as FamilyRoutinesRouteImport } from './routes/family.routines'
+import { Route as FamilySettingsRouteImport } from './routes/family.settings'
+import { Route as ApiPublicCareAccessRouteImport } from './routes/api/public/care/access'
+import { Route as ApiPublicCareWorkspaceRouteImport } from './routes/api/public/care/workspace'
+import { Route as ApiPublicG2ActionRouteImport } from './routes/api/public/g2/action'
 import { Route as ApiPublicG2DoneRouteImport } from './routes/api/public/g2/done'
 import { Route as ApiPublicG2PairRouteImport } from './routes/api/public/g2/pair'
+import { Route as ApiPublicG2SupportRouteImport } from './routes/api/public/g2/support'
 import { Route as ApiPublicG2SyncRouteImport } from './routes/api/public/g2/sync'
 import { Route as ApiPublicJobsReminderAlertsRouteImport } from './routes/api/public/jobs/reminder-alerts'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
@@ -33,6 +45,11 @@ const BreakdownRoute = BreakdownRouteImport.update({
   path: '/breakdown',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompanionRoute = CompanionRouteImport.update({
+  id: '/companion',
+  path: '/companion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemovideoRoute = DemovideoRouteImport.update({
   id: '/demovideo',
   path: '/demovideo',
@@ -41,6 +58,11 @@ const DemovideoRoute = DemovideoRouteImport.update({
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
   path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FamilyRoute = FamilyRouteImport.update({
+  id: '/family',
+  path: '/family',
   getParentRoute: () => rootRouteImport,
 } as any)
 const G2Route = G2RouteImport.update({
@@ -58,6 +80,51 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FamilyIndexRoute = FamilyIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FamilyRoute,
+} as any)
+const FamilyCheckinsRoute = FamilyCheckinsRouteImport.update({
+  id: '/checkins',
+  path: '/checkins',
+  getParentRoute: () => FamilyRoute,
+} as any)
+const FamilyHistoryRoute = FamilyHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => FamilyRoute,
+} as any)
+const FamilyPeopleRoute = FamilyPeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => FamilyRoute,
+} as any)
+const FamilyRoutinesRoute = FamilyRoutinesRouteImport.update({
+  id: '/routines',
+  path: '/routines',
+  getParentRoute: () => FamilyRoute,
+} as any)
+const FamilySettingsRoute = FamilySettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => FamilyRoute,
+} as any)
+const ApiPublicCareAccessRoute = ApiPublicCareAccessRouteImport.update({
+  id: '/api/public/care/access',
+  path: '/api/public/care/access',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCareWorkspaceRoute = ApiPublicCareWorkspaceRouteImport.update({
+  id: '/api/public/care/workspace',
+  path: '/api/public/care/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicG2ActionRoute = ApiPublicG2ActionRouteImport.update({
+  id: '/api/public/g2/action',
+  path: '/api/public/g2/action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicG2DoneRoute = ApiPublicG2DoneRouteImport.update({
   id: '/api/public/g2/done',
   path: '/api/public/g2/done',
@@ -66,6 +133,11 @@ const ApiPublicG2DoneRoute = ApiPublicG2DoneRouteImport.update({
 const ApiPublicG2PairRoute = ApiPublicG2PairRouteImport.update({
   id: '/api/public/g2/pair',
   path: '/api/public/g2/pair',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicG2SupportRoute = ApiPublicG2SupportRouteImport.update({
+  id: '/api/public/g2/support',
+  path: '/api/public/g2/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicG2SyncRoute = ApiPublicG2SyncRouteImport.update({
@@ -95,13 +167,25 @@ const LovableEmailTransactionalPreviewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/breakdown': typeof BreakdownRoute
+  '/companion': typeof CompanionRoute
   '/demovideo': typeof DemovideoRoute
   '/docs': typeof DocsRoute
+  '/family': typeof FamilyRouteWithChildren
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
   '/terms': typeof TermsRoute
+  '/family/checkins': typeof FamilyCheckinsRoute
+  '/family/history': typeof FamilyHistoryRoute
+  '/family/people': typeof FamilyPeopleRoute
+  '/family/routines': typeof FamilyRoutinesRoute
+  '/family/settings': typeof FamilySettingsRoute
+  '/family/': typeof FamilyIndexRoute
+  '/api/public/care/access': typeof ApiPublicCareAccessRoute
+  '/api/public/care/workspace': typeof ApiPublicCareWorkspaceRoute
+  '/api/public/g2/action': typeof ApiPublicG2ActionRoute
   '/api/public/g2/done': typeof ApiPublicG2DoneRoute
   '/api/public/g2/pair': typeof ApiPublicG2PairRoute
+  '/api/public/g2/support': typeof ApiPublicG2SupportRoute
   '/api/public/g2/sync': typeof ApiPublicG2SyncRoute
   '/api/public/jobs/reminder-alerts': typeof ApiPublicJobsReminderAlertsRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -110,13 +194,24 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/breakdown': typeof BreakdownRoute
+  '/companion': typeof CompanionRoute
   '/demovideo': typeof DemovideoRoute
   '/docs': typeof DocsRoute
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
   '/terms': typeof TermsRoute
+  '/family/checkins': typeof FamilyCheckinsRoute
+  '/family/history': typeof FamilyHistoryRoute
+  '/family/people': typeof FamilyPeopleRoute
+  '/family/routines': typeof FamilyRoutinesRoute
+  '/family/settings': typeof FamilySettingsRoute
+  '/family': typeof FamilyIndexRoute
+  '/api/public/care/access': typeof ApiPublicCareAccessRoute
+  '/api/public/care/workspace': typeof ApiPublicCareWorkspaceRoute
+  '/api/public/g2/action': typeof ApiPublicG2ActionRoute
   '/api/public/g2/done': typeof ApiPublicG2DoneRoute
   '/api/public/g2/pair': typeof ApiPublicG2PairRoute
+  '/api/public/g2/support': typeof ApiPublicG2SupportRoute
   '/api/public/g2/sync': typeof ApiPublicG2SyncRoute
   '/api/public/jobs/reminder-alerts': typeof ApiPublicJobsReminderAlertsRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -126,13 +221,25 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/breakdown': typeof BreakdownRoute
+  '/companion': typeof CompanionRoute
   '/demovideo': typeof DemovideoRoute
   '/docs': typeof DocsRoute
+  '/family': typeof FamilyRouteWithChildren
   '/g2': typeof G2Route
   '/install': typeof InstallRoute
   '/terms': typeof TermsRoute
+  '/family/checkins': typeof FamilyCheckinsRoute
+  '/family/history': typeof FamilyHistoryRoute
+  '/family/people': typeof FamilyPeopleRoute
+  '/family/routines': typeof FamilyRoutinesRoute
+  '/family/settings': typeof FamilySettingsRoute
+  '/family/': typeof FamilyIndexRoute
+  '/api/public/care/access': typeof ApiPublicCareAccessRoute
+  '/api/public/care/workspace': typeof ApiPublicCareWorkspaceRoute
+  '/api/public/g2/action': typeof ApiPublicG2ActionRoute
   '/api/public/g2/done': typeof ApiPublicG2DoneRoute
   '/api/public/g2/pair': typeof ApiPublicG2PairRoute
+  '/api/public/g2/support': typeof ApiPublicG2SupportRoute
   '/api/public/g2/sync': typeof ApiPublicG2SyncRoute
   '/api/public/jobs/reminder-alerts': typeof ApiPublicJobsReminderAlertsRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -143,13 +250,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/breakdown'
+    | '/companion'
     | '/demovideo'
     | '/docs'
+    | '/family'
     | '/g2'
     | '/install'
     | '/terms'
+    | '/family/checkins'
+    | '/family/history'
+    | '/family/people'
+    | '/family/routines'
+    | '/family/settings'
+    | '/family/'
+    | '/api/public/care/access'
+    | '/api/public/care/workspace'
+    | '/api/public/g2/action'
     | '/api/public/g2/done'
     | '/api/public/g2/pair'
+    | '/api/public/g2/support'
     | '/api/public/g2/sync'
     | '/api/public/jobs/reminder-alerts'
     | '/api/public/telegram/webhook'
@@ -158,13 +277,24 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/breakdown'
+    | '/companion'
     | '/demovideo'
     | '/docs'
     | '/g2'
     | '/install'
     | '/terms'
+    | '/family/checkins'
+    | '/family/history'
+    | '/family/people'
+    | '/family/routines'
+    | '/family/settings'
+    | '/family'
+    | '/api/public/care/access'
+    | '/api/public/care/workspace'
+    | '/api/public/g2/action'
     | '/api/public/g2/done'
     | '/api/public/g2/pair'
+    | '/api/public/g2/support'
     | '/api/public/g2/sync'
     | '/api/public/jobs/reminder-alerts'
     | '/api/public/telegram/webhook'
@@ -173,13 +303,25 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/breakdown'
+    | '/companion'
     | '/demovideo'
     | '/docs'
+    | '/family'
     | '/g2'
     | '/install'
     | '/terms'
+    | '/family/checkins'
+    | '/family/history'
+    | '/family/people'
+    | '/family/routines'
+    | '/family/settings'
+    | '/family/'
+    | '/api/public/care/access'
+    | '/api/public/care/workspace'
+    | '/api/public/g2/action'
     | '/api/public/g2/done'
     | '/api/public/g2/pair'
+    | '/api/public/g2/support'
     | '/api/public/g2/sync'
     | '/api/public/jobs/reminder-alerts'
     | '/api/public/telegram/webhook'
@@ -189,13 +331,19 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BreakdownRoute: typeof BreakdownRoute
+  CompanionRoute: typeof CompanionRoute
   DemovideoRoute: typeof DemovideoRoute
   DocsRoute: typeof DocsRoute
+  FamilyRoute: typeof FamilyRouteWithChildren
   G2Route: typeof G2Route
   InstallRoute: typeof InstallRoute
   TermsRoute: typeof TermsRoute
+  ApiPublicCareAccessRoute: typeof ApiPublicCareAccessRoute
+  ApiPublicCareWorkspaceRoute: typeof ApiPublicCareWorkspaceRoute
+  ApiPublicG2ActionRoute: typeof ApiPublicG2ActionRoute
   ApiPublicG2DoneRoute: typeof ApiPublicG2DoneRoute
   ApiPublicG2PairRoute: typeof ApiPublicG2PairRoute
+  ApiPublicG2SupportRoute: typeof ApiPublicG2SupportRoute
   ApiPublicG2SyncRoute: typeof ApiPublicG2SyncRoute
   ApiPublicJobsReminderAlertsRoute: typeof ApiPublicJobsReminderAlertsRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
@@ -218,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BreakdownRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/companion': {
+      id: '/companion'
+      path: '/companion'
+      fullPath: '/companion'
+      preLoaderRoute: typeof CompanionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demovideo': {
       id: '/demovideo'
       path: '/demovideo'
@@ -230,6 +385,13 @@ declare module '@tanstack/react-router' {
       path: '/docs'
       fullPath: '/docs'
       preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/family': {
+      id: '/family'
+      path: '/family'
+      fullPath: '/family'
+      preLoaderRoute: typeof FamilyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/g2': {
@@ -253,6 +415,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/family/': {
+      id: '/family/'
+      path: '/'
+      fullPath: '/family/'
+      preLoaderRoute: typeof FamilyIndexRouteImport
+      parentRoute: typeof FamilyRoute
+    }
+    '/family/checkins': {
+      id: '/family/checkins'
+      path: '/checkins'
+      fullPath: '/family/checkins'
+      preLoaderRoute: typeof FamilyCheckinsRouteImport
+      parentRoute: typeof FamilyRoute
+    }
+    '/family/history': {
+      id: '/family/history'
+      path: '/history'
+      fullPath: '/family/history'
+      preLoaderRoute: typeof FamilyHistoryRouteImport
+      parentRoute: typeof FamilyRoute
+    }
+    '/family/people': {
+      id: '/family/people'
+      path: '/people'
+      fullPath: '/family/people'
+      preLoaderRoute: typeof FamilyPeopleRouteImport
+      parentRoute: typeof FamilyRoute
+    }
+    '/family/routines': {
+      id: '/family/routines'
+      path: '/routines'
+      fullPath: '/family/routines'
+      preLoaderRoute: typeof FamilyRoutinesRouteImport
+      parentRoute: typeof FamilyRoute
+    }
+    '/family/settings': {
+      id: '/family/settings'
+      path: '/settings'
+      fullPath: '/family/settings'
+      preLoaderRoute: typeof FamilySettingsRouteImport
+      parentRoute: typeof FamilyRoute
+    }
+    '/api/public/care/access': {
+      id: '/api/public/care/access'
+      path: '/api/public/care/access'
+      fullPath: '/api/public/care/access'
+      preLoaderRoute: typeof ApiPublicCareAccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/care/workspace': {
+      id: '/api/public/care/workspace'
+      path: '/api/public/care/workspace'
+      fullPath: '/api/public/care/workspace'
+      preLoaderRoute: typeof ApiPublicCareWorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/g2/action': {
+      id: '/api/public/g2/action'
+      path: '/api/public/g2/action'
+      fullPath: '/api/public/g2/action'
+      preLoaderRoute: typeof ApiPublicG2ActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/g2/done': {
       id: '/api/public/g2/done'
       path: '/api/public/g2/done'
@@ -265,6 +490,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/g2/pair'
       fullPath: '/api/public/g2/pair'
       preLoaderRoute: typeof ApiPublicG2PairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/g2/support': {
+      id: '/api/public/g2/support'
+      path: '/api/public/g2/support'
+      fullPath: '/api/public/g2/support'
+      preLoaderRoute: typeof ApiPublicG2SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/g2/sync': {
@@ -298,16 +530,43 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface FamilyRouteChildren {
+  FamilyCheckinsRoute: typeof FamilyCheckinsRoute
+  FamilyHistoryRoute: typeof FamilyHistoryRoute
+  FamilyPeopleRoute: typeof FamilyPeopleRoute
+  FamilyRoutinesRoute: typeof FamilyRoutinesRoute
+  FamilySettingsRoute: typeof FamilySettingsRoute
+  FamilyIndexRoute: typeof FamilyIndexRoute
+}
+
+const FamilyRouteChildren: FamilyRouteChildren = {
+  FamilyCheckinsRoute: FamilyCheckinsRoute,
+  FamilyHistoryRoute: FamilyHistoryRoute,
+  FamilyPeopleRoute: FamilyPeopleRoute,
+  FamilyRoutinesRoute: FamilyRoutinesRoute,
+  FamilySettingsRoute: FamilySettingsRoute,
+  FamilyIndexRoute: FamilyIndexRoute,
+}
+
+const FamilyRouteWithChildren =
+  FamilyRoute._addFileChildren(FamilyRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BreakdownRoute: BreakdownRoute,
+  CompanionRoute: CompanionRoute,
   DemovideoRoute: DemovideoRoute,
   DocsRoute: DocsRoute,
+  FamilyRoute: FamilyRouteWithChildren,
   G2Route: G2Route,
   InstallRoute: InstallRoute,
   TermsRoute: TermsRoute,
+  ApiPublicCareAccessRoute: ApiPublicCareAccessRoute,
+  ApiPublicCareWorkspaceRoute: ApiPublicCareWorkspaceRoute,
+  ApiPublicG2ActionRoute: ApiPublicG2ActionRoute,
   ApiPublicG2DoneRoute: ApiPublicG2DoneRoute,
   ApiPublicG2PairRoute: ApiPublicG2PairRoute,
+  ApiPublicG2SupportRoute: ApiPublicG2SupportRoute,
   ApiPublicG2SyncRoute: ApiPublicG2SyncRoute,
   ApiPublicJobsReminderAlertsRoute: ApiPublicJobsReminderAlertsRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,

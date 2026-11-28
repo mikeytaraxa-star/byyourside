@@ -1,5 +1,18 @@
 # ByYourSide live integrations
 
+## Everyday companion upgrade
+
+- [x] Add private family membership, short-lived access, occurrence actions, and durable offline reminder synchronization.
+- [x] Add later/help/decline/repeat, daily orientation, step-by-step routines, reassurance notes, and phone-first use.
+- [x] Add the family workspace, editor, invitations, handover, history, and check-in ownership.
+- [x] Add quiet periods, response recipients, availability notices, aggregate delivery evidence, and notification readiness tests.
+- [x] Add private family media, contact shortcuts, phone reading settings, access revocation, and export/deletion handlers.
+- [x] Extend bounded Cocoon questions and approved wording drafts without another AI provider.
+- [x] Verify isolated real-data save/sync/action/readback, duplicate handling, cross-family denial, permissions and device revocation; refresh docs and the Even Hub package. Full suite: 126 tests passed.
+- [ ] Register the Telegram Mini App menu and re-test real /family and invitations — requires publication and user Telegram interaction.
+- [ ] Verify live Cocoon/speech, physical G2/R1, and real email delivery — blocked by provider access, hardware and verified sender/mailbox.
+- [ ] Finish the remainder of the approved expansion: preparation offsets, reviewed additional languages, grouped notices, per-recipient evidence, native offline routine replay and stronger atomic edit/undo recovery. These are not shipped; see docs/everyday-companion.md.
+
 - [x] Prepare managed email sending and a family reminder-alert template for notify.byside.here; email sending remains server-only, with no email queue or database tables.
 - [x] Add /email enrollment with mailbox verification and simultaneous email delivery for 15-minute and critical Telegram alerts; docs updated, full handler flow tested with isolated service doubles, protected runtime endpoints and rendered templates checked.
 - [ ] Verify live email delivery to the user's supplied test inbox — blocked by sender-domain DNS verification, publishing and the user's mailbox approval; keep the inbox out of source and docs.

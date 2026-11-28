@@ -195,6 +195,22 @@ function Index() {
       return;
     }
     if (voiceDisplay) replaceDisplay(null);
+    if (["menu-later", "menu-help", "menu-decline", "menu-repeat", "menu-routine"].includes(action)) {
+      if (action === "menu-routine") { replaceDisplay({title:"ROUTINES · DEMO",body:"Open Loved One view for family-approved step-by-step routines."}); return; }
+      if (action === "menu-repeat") { replaceDisplay(null); return; }
+      if (!active) return;
+      if (action === "menu-later") {
+        if (active.critical) { replaceDisplay({title:"FAMILY PERMISSION",body:"Important postponement needs your family's approved care plan."}); return; }
+        setReminders(rows => rows.map(r => r.id === active.id ? {...r,time:fmt(now+15),careState:'postponed'} : r));
+        bot(`Demo: Your Loved One asked for 15 more minutes for “${active.text}”.`);
+        replaceDisplay({title:"A LITTLE LATER",body:"Your reminder will return in 15 minutes."});
+      } else {
+        setReminders(rows => rows.map(r => r.id === active.id ? {...r,careState:action==='menu-help'?'help':'declined'} : r));
+        bot(`Demo: “${active.text}” — ${action==='menu-help'?'help requested':'not today; not confirmed'}.`);
+        replaceDisplay({title:action==='menu-help'?'HELP REQUESTED':'NOT TODAY',body:action==='menu-help'?'Your family would receive a check-in request.':'Your choice is recorded, not marked done.'});
+      }
+      return;
+    }
     if (action === "tap" || action === "menu-done") { browseRef.current = -1; tap(); return; }
     if (action === "double-tap" || action === "menu-today") { browseRef.current = -1; replaceDisplay(null); return; }
     const sorted = [...reminders].sort((a, b) => toMin(a.time) - toMin(b.time));
@@ -230,6 +246,8 @@ function Index() {
             <p className="font-display text-sm font-bold text-primary">ByYourSide</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button asChild variant="default" size="sm"><Link to="/family">Family workspace</Link></Button>
+            <Button asChild variant="outline" size="sm"><Link to="/companion">Loved One view</Link></Button>
             <Button asChild variant="outline" size="sm"><Link to="/g2">Open G2 app</Link></Button>
             <Button asChild variant="ghost" size="sm"><a href="/downloads/byyourside-g2.ehpk" download>Download G2 package</a></Button>
             <Button asChild variant="ghost" size="sm"><a href="/downloads/g2-setup.md" download>G2 installation guide</a></Button>
