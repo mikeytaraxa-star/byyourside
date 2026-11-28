@@ -58,7 +58,9 @@ export function GlassesFilm({ clock, onClose }: { clock?: string; onClose: () =>
     Promise.all([fs, loaded]).then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).then(() => {
       if (cancelled) return;
       setPhase("on");
-      playTimer = setTimeout(() => { setPhase("play"); vid.current?.play().catch(() => {}); }, 1600);
+      // Let the world start moving while the frame settles, so the scene never "unfreezes" after the animation.
+      vid.current?.play().catch(() => {});
+      playTimer = setTimeout(() => setPhase("play"), 1700);
     });
     const exit = () => { if (!document.fullscreenElement) finishRef.current(); };
     document.addEventListener("fullscreenchange", exit);
@@ -70,14 +72,14 @@ export function GlassesFilm({ clock, onClose }: { clock?: string; onClose: () =>
     finishing.current = true;
     vid.current?.pause();
     setPhase("off");
-    closeTimer.current = setTimeout(() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); onClose(); }, 1500);
+    closeTimer.current = setTimeout(() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); onClose(); }, 1650);
   };
   finishRef.current = finish;
   return (
     <div ref={ref} className={`fixed inset-0 z-50 overflow-hidden bg-background ${phase === "off" ? "film-out" : phase === "wait" ? "opacity-0" : "film-in"}`}>
       <video ref={vid} src={dailyLife.url} preload="auto" playsInline muted onTimeUpdate={syncScene} onSeeked={syncScene} onLoadedMetadata={syncScene} onEnded={finish} className="absolute inset-0 h-full w-full object-cover" />
-      <div className={`pointer-events-none absolute inset-0 ${phase === "off" ? "eyes-close" : phase === "wait" ? "opacity-0" : "eyes-open"}`} />
-      <div className={`pointer-events-none absolute inset-0 [transform:translateZ(0)] ${phase === "off" ? "glasses-off" : phase === "wait" ? "opacity-0" : "glasses-on"}`}>
+      <div className={`eyes-layer pointer-events-none absolute inset-0 ${phase === "off" ? "eyes-close" : phase === "wait" ? "opacity-100" : "eyes-open"}`} />
+      <div className={`glasses-layer pointer-events-none absolute inset-0 ${phase === "off" ? "glasses-off" : phase === "wait" ? "glasses-pre" : "glasses-on"}`}>
         <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" className="h-full w-full text-frame">
           <defs><mask id="lenses"><rect width="1600" height="900" fill="white" /><path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="black" /><path d="M820,430 C820,250 950,175 1150,175 C1340,175 1480,215 1480,400 C1480,610 1330,730 1150,730 C960,730 820,610 820,430 Z" fill="black" /></mask><clipPath id="right-lens"><path d="M840,430 C840,262 960,195 1150,195 C1330,195 1460,232 1460,400 C1460,598 1320,710 1150,710 C970,710 840,598 840,430 Z" /></clipPath></defs>
           <path d="M120,430 C120,250 250,175 450,175 C640,175 780,215 780,400 C780,610 630,730 450,730 C260,730 120,610 120,430 Z" fill="none" stroke="currentColor" strokeWidth="38" />
