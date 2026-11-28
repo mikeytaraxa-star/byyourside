@@ -56,3 +56,8 @@ use the editor.
 
 - Family voice recording uses a separate consent-gated MediaRecorder hook with local preview and explicit private saving; companion playback uses native phone audio controls, never glasses audio or speech recognition.
 - Gentle recaps reuse positive family notes with an explicit local recap date; filter by that date and exclude audio so no event inference or reminder completion becomes a recalled moment.
+- Care edit/undo operations use service-only transactional functions; credential revocation deletes sessions and access codes so reinvitation cannot revive stolen access.
+- Erasure locks the circle, revokes credentials first, and retries full-prefix media cleanup through the existing scheduled job so orphaned uploads are not skipped.
+- G2 asynchronous replies are gated by pairing generation and family-local clocks; support screens cannot confirm hidden reminders, preventing cross-family disclosure and wrong-occurrence actions.
+- Validate every private media path against both circle and note identifiers before signing or removing it; stored paths are not authority.
+- Telegram outbound delivery requires a recorded chat /start opt-in; keep provider error bodies out of logs because they may contain private care facts.

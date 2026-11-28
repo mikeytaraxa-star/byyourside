@@ -64,6 +64,20 @@
       "when": 1795833211405,
       "tag": "0008_family_approved_recap_date",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795833720412,
+      "tag": "0009_care_service_only_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795833805714,
+      "tag": "0010_care_atomic_recovery_and_revocation",
+      "breakpoints": true
     }
   ]
 }

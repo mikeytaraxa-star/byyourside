@@ -1,4 +1,4 @@
-export type Reminder = { id: string; time: string; text: string; detail?: string; critical?: boolean; status: "pending" | "done" | "missed"; careState?: 'pending'|'done'|'postponed'|'help'|'declined'; snoozeMinutes?: number; version?: number; leadMinutes?: number };
+export type Reminder = { id: string; time: string; originalTime?: string; text: string; detail?: string; critical?: boolean; status: "pending" | "done" | "missed"; careState?: 'pending'|'done'|'postponed'|'help'|'declined'; snoozeMinutes?: number; version?: number; leadMinutes?: number };
 export type Person = { name: string; relation: string; note: string };
 export type Msg = { id: string; from: "family" | "bot"; text: string };
 
@@ -55,7 +55,13 @@ export function answer(q: "who" | "today" | "where", people: Person[], reminders
 /** Grounded showcase answers, not a live AI call or visual person identification. */
 export function answerQuestion(question: string, people: Person[], reminders: Reminder[], now: number) {
   const lower = question.toLowerCase();
-  const person = people.find((p) => lower.includes(p.name.toLowerCase()));
+  const matches = people.filter(p => {
+    const name=p.name.trim().toLowerCase();if(!name)return false;
+    const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}($|[^\\p{L}\\p{N}])`,'u').test(lower);
+  });
+  if(matches.length>1)return 'Please ask about one person by their full name.';
+  const person = matches[0];
   if (person) return answer("who", people, reminders, now, person);
   if (/\b(who|person|visitor)\b/.test(lower)) return "I can't identify someone through the glasses. Ask their name; I can tell you what your family shared about them.";
   if (/\b(next|today|reminder|planned|schedule)\b/.test(lower)) {

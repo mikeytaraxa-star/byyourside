@@ -55,15 +55,15 @@ async function sendTelegram(
   });
   const body = await response.text();
   if (!response.ok) {
-    console.error(`Telegram request failed [${response.status}]: ${body}`);
-    throw new Error(`Telegram request failed [${response.status}]: ${body}`);
+    console.error(`Telegram request failed [${response.status}]`);
+    throw new Error(`Telegram request failed [${response.status}]`);
   }
   const result = z
     .object({ ok: z.boolean(), description: z.string().optional() })
     .passthrough()
     .parse(JSON.parse(body));
   if (!result.ok)
-    throw new Error(`Telegram request failed: ${result.description ?? "Unknown provider error"}`);
+    throw new Error('Telegram refused the reply');
 }
 
 export const Route = createFileRoute("/api/public/telegram/webhook")({
@@ -91,7 +91,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
         const message = update.message ?? update.edited_message;
         if (!message?.text) return Response.json({ ok: true, ignored: true });
-        const text = navigationCommand(message.text);
+        const text = navigationCommand(message.text).replace(/^(\/\w+)@\w+(?=\s|$)/,'$1');
+        const starting = /^\/start(?:\s|$)/i.test(text);
+        if (!message.from?.id || (message.chat.id > 0 && message.chat.id !== message.from.id)) return Response.json({ok:true,ignored:true});
+        const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+        const { chatStarted } = await import('@/lib/telegram-permission.server');
+        if (!starting && !await chatStarted(supabaseAdmin,message.chat.id)) return Response.json({ok:true,ignored:true});
 
         // Approval codes are secrets: persist only a digest for command deduplication,
         // never the command's plaintext code in the Telegram event or raw payload.
@@ -107,7 +112,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           ...(update.edited_message ? { edited_message: { ...update.edited_message, text: storedText } } : {}),
         } as unknown as Json;
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const chatId = message.chat.id;
         const { data: stored, error: updateError } = await supabaseAdmin
           .from("telegram_updates")
@@ -117,7 +121,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               chat_id: chatId,
               telegram_user_id: message.from?.id ?? null,
               text: storedText,
-              raw_update: storedUpdate,
+              raw_update: {update_id:update.update_id,message:{chat:{id:chatId},from:{id:message.from.id},text:storedText}} as Json,
             },
             { onConflict: "update_id", ignoreDuplicates: true },
           )
@@ -155,7 +159,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (!existingMembers?.length && message.from?.id) {
           await supabaseAdmin.from("care_members").upsert({ circle_id: circle.id, telegram_user_id: message.from.id, role: "owner", member_name: typeof message.from["first_name"] === "string" ? message.from["first_name"].slice(0, 80) : "Family member", direct_chat_id: chatId > 0 ? chatId : null }, { onConflict: "circle_id,telegram_user_id", ignoreDuplicates: true });
         }
-        if (text === "/start" && chatId > 0 && message.from?.id) {
+        if (starting && chatId > 0 && message.from?.id) {
           await supabaseAdmin.from("care_members").update({ direct_chat_id: chatId }).eq("telegram_user_id", message.from.id).is("revoked_at", null);
         }
         const { data: membership } = await supabaseAdmin.from("care_members").select("role").eq("circle_id", circle.id).eq("telegram_user_id", message.from?.id ?? 0).is("revoked_at", null).maybeSingle();
@@ -176,7 +180,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           } catch {
             reply = "I couldn't read or save your email settings. Please try again later; Telegram alerts continue.";
           }
-        } else if (text === "/start" || text === "/help") {
+        } else if (starting || text === "/help") {
           reply =
             "💚 ByYourSide is ready.\n\nAdd a reminder:\n/remind 14:00 Blue pill — with water\n\nMark medication or another important reminder:\n/critical 08:00 Blue pill — with water\n\nAdd someone familiar:\n/person Anna | daughter | visits Sundays\n\nAsk a private AI question:\n/ask What is next?\n\nMark a reminder done:\n/done 14:00\n\nConnect the glasses:\n/pair\n\nFind Your Loved One (glasses location):\n/findme\n\nSet your time zone:\n/timezone Europe/Berlin\n\nDaily family summary (default 21:00):\n/summary 21:00 or /summary off\n\nEmail backup for missed reminders:\n/email your-address@example.com\nApprove with the code emailed to an inbox you own. /email checks status; /email off removes the backup inbox.\n\nTip: add this bot to a family group with Your Loved One so everyone gets the reminder and the 15-minute check-in.";
           reply += "\n\nFamily editor and routines:\n/family\n\nOther reminder choices:\n/later 14:00 15\n/needhelp 14:00\n/nottoday 14:00\n/again 14:00\n\nImportant postponement requires family permission. Help and Not today never mean done.";
@@ -188,6 +192,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             reply = error ? `⚠️ I couldn't save the time zone: ${error.message}` : `🕰 Time zone set to ${tz}. Reminders and check-ins follow this clock.`;
           }
         } else if (isFindMeCommand(text)) {
+          const { data: privacyCircle } = await supabaseAdmin.from('care_circles').select('preferences').eq('id', circle.id).single();
+          const { preferences } = await import('@/lib/care/service.server');
+          if (!preferences(privacyCircle?.preferences ?? {}).locationSharing) {
+            await sendTelegram(chatId, 'Phone location sharing is off in your family settings. No location was requested or shared.', lovableKey, connectionKey);
+            return Response.json({ ok: true });
+          }
           const now = new Date();
           await supabaseAdmin.from("care_circles").update({ findme_requested_at: now.toISOString() }).eq("id", circle.id);
           const { data: dev } = await supabaseAdmin.from("g2_devices").select("last_lat, last_lng, last_accuracy, last_location_at").eq("circle_id", circle.id).not("last_location_at", "is", null).order("last_location_at", { ascending: false }).limit(1).maybeSingle();
@@ -244,11 +254,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         } else if (/^\/ask\s+/i.test(text)) {
           const question = text.replace(/^\/ask\s+/i, "").slice(0, 500);
+          const { data: clockCircle } = await supabaseAdmin.from('care_circles').select('timezone').eq('id', circle.id).single();
+          const { date } = localClock(new Date(), clockCircle?.timezone ?? 'UTC');
           const [{ data: reminders }, { data: people }] = await Promise.all([
             supabaseAdmin
               .from("reminders")
-              .select("title, local_time, detail, status")
+              .select("title, local_time, detail, confirmed_on, date_override")
               .eq("circle_id", circle.id)
+              .is('deleted_at', null)
               .order("local_time")
               .limit(20),
             supabaseAdmin
@@ -257,15 +270,16 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               .eq("circle_id", circle.id)
               .limit(20),
           ]);
-          const next = reminders?.find((reminder) => reminder.status === "pending");
+          const today = (reminders ?? []).filter(r => !r.date_override || r.date_override === date);
+          const next = today.find((reminder) => reminder.confirmed_on !== date);
           const context =
             [
               ...(people ?? []).map(
                 (person) => `${person.name} is their ${person.relation}. ${person.note}`,
               ),
-              ...(reminders ?? []).map(
+              ...today.map(
                 (reminder) =>
-                  `${reminder.local_time}: ${reminder.title}${reminder.detail ? ` — ${reminder.detail}` : ""} (${reminder.status})`,
+                  `${reminder.local_time}: ${reminder.title}${reminder.detail ? ` — ${reminder.detail}` : ""} (${reminder.confirmed_on === date ? 'confirmed today' : 'not confirmed today'})`,
               ),
             ].join("\n") || "No family reminders or people have been added yet.";
           try {

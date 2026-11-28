@@ -31,6 +31,10 @@ describe('hardware schedule', () => {
     expect(nextDay.reminders).toHaveLength(2);
     expect(nextDay.date).toBe('2026-11-24');
   });
+  it('restores the original recurring time after a postponed day ends',()=>{
+    const postponed={...session,reminders:[{id:'water',text:'Drink water',time:'14:15',originalTime:'14:00',status:'pending',careState:'postponed'}]};
+    expect(restoreSession(JSON.stringify(postponed),'2026-11-24').reminders[0]).toMatchObject({time:'14:00',careState:'pending'});
+  });
   it('rejects corrupted and malformed stored reminders', () => {
     expect(restoreSession('{broken').reminders).toHaveLength(0);
     expect(restoreSession(JSON.stringify({ reminders: [{ id: 'x', time: '99:00', text: 'bad', status: 'done' }] })).reminders).toHaveLength(0);

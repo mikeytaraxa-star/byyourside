@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { dayMoments, validateFamilyFile, familyMime, RECORDING_SECONDS } from './family-moments';
+import { dayMoments, validateFamilyFile, familyMime, RECORDING_SECONDS,familyMediaPath } from './family-moments';
 import type { CareNote } from './types';
 const note = (id: string, patch: Partial<CareNote> = {}): CareNote => ({ id, label: id, answer: 'A family-approved moment.', category: 'message', phone: '', media_path: null, media_kind: null, updated_at: '2026-11-28T10:00:00Z', recap_date: '2026-11-28', ...patch });
 describe('gentle family recap', () => {
+  it('requires both family and note ownership for private file paths',()=>{
+    expect(familyMediaPath('family-a/note-a/file','family-a','note-a')).toBe(true);
+    expect(familyMediaPath('family-b/note-a/file','family-a','note-a')).toBe(false);
+    expect(familyMediaPath('family-a/note-b/file','family-a','note-a')).toBe(false);
+    expect(familyMediaPath('family-a/note-a/../file','family-a','note-a')).toBe(false);
+    expect(familyMediaPath('family-a/note-a/%2e%2e','family-a','note-a')).toBe(false);
+  });
   it('shows only explicitly approved positive messages for the local day', () => {
     expect(dayMoments([note('today'), note('unapproved', { recap_date: null }), note('yesterday', { recap_date: '2026-11-27' }), note('person', { category: 'person' }), note('voice', { media_kind: 'audio' }), note('photo', { media_kind: 'photo', media_path: 'private/photo' })], '2026-11-28').map(n => n.id)).toEqual(['today', 'photo']);
   });

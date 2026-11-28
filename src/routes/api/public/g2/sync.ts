@@ -3,6 +3,9 @@ import { deviceCircle, json, preflight } from '@/lib/g2-sync.server';
 import { localClock } from '@/lib/reminder-alerts';
 import { validLocation, venueBody } from '@/lib/findme';
 import { telegramCall } from '@/lib/g2-sync.server';
+import { z } from 'zod';
+
+const syncBody = z.object({ location: z.unknown().optional() });
 
 export const Route = createFileRoute('/api/public/g2/sync')({
   server: {
@@ -12,8 +15,9 @@ export const Route = createFileRoute('/api/public/g2/sync')({
         const device = await deviceCircle(request);
         if (!device) return json({ ok: false, error: 'unpaired' }, 401);
         const { supabaseAdmin, circleId, deviceId } = device;
-        const body = await request.json().catch(() => ({})) as Record<string, unknown>;
-        const loc = validLocation(body['location']);
+        const body = syncBody.safeParse(await request.json().catch(() => null));
+        if (!body.success) return json({ error: 'Invalid synchronization request' }, 400);
+        const loc = validLocation(body.data.location);
         const { data: circle } = await supabaseAdmin.from('care_circles').select('display_name, timezone, telegram_chat_id, findme_requested_at, preferences').eq('id', circleId).single();
         const { preferences, loadCare } = await import('@/lib/care/service.server');
         const prefs = preferences(circle?.preferences ?? {});
@@ -36,6 +40,7 @@ export const Route = createFileRoute('/api/public/g2/sync')({
           ok: true,
           name: circle?.display_name ?? 'Your Loved One',
           date,
+          timezone: circle?.timezone ?? 'UTC',
           reminders: workspace.reminders.map(r => ({ id: r.id, time: r.effective_time, text: r.title, ...(r.detail ? { detail: r.detail } : {}), ...(r.critical ? { critical: true } : {}), status: r.state === 'done' ? 'done' : 'pending', careState: r.state, snoozeMinutes: r.snooze_minutes, version: r.version, leadMinutes: r.lead_minutes })),
           people: workspace.notes.filter(n => n.category === 'person').map(n => ({name:n.label,relation:'familiar person',note:n.answer})),
           notes: workspace.notes,

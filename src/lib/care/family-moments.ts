@@ -2,6 +2,9 @@ import type { CareNote } from './types';
 
 export const RECORDING_SECONDS = 60;
 export const FAMILY_MEDIA_BYTES = 5 * 1024 * 1024;
+export function familyMediaPath(path:string,circleId:string,noteId:string):boolean {
+  return path.startsWith(`${circleId}/${noteId}/`) && path.split('/').length===3 && !path.includes('..') && !path.includes('\\') && !path.includes('%');
+}
 
 export function dayMoments(notes: CareNote[], date: string): CareNote[] {
   return notes.filter(note => note.category === 'message' && note.recap_date === date && note.media_kind !== 'audio')

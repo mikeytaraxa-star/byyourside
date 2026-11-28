@@ -26,6 +26,9 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
   const audioQueue = useRef<Promise<void>>(Promise.resolve());
   const updatesRef = useRef<ReturnType<typeof latestUpdateQueue<G2Display>> | null>(null);
   const connectionRevision = useRef(0);
+  const sensorQueue = useRef<Promise<void>>(Promise.resolve());
+  const sensorRevision = useRef(0);
+  const sensorsEnabled = useRef(false);
 
   const closeAudio = useCallback((bridge: EvenAppBridge) => {
     audioRevision.current += 1;
@@ -43,6 +46,7 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
   }, [onGesture]);
 
   const stop = useCallback(() => {
+    sensorRevision.current += 1;sensorsEnabled.current=false;
     connectionRevision.current += 1;
     updatesRef.current?.stop();
     updatesRef.current = null;
@@ -141,7 +145,7 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
           stop();
         }
         if (
-          event.sysEvent?.eventType === sdk.OsEventTypeList.IMU_DATA_REPORT &&
+          sensorsEnabled.current && event.sysEvent?.eventType === sdk.OsEventTypeList.IMU_DATA_REPORT &&
           event.sysEvent.imuData
         ) {
           setMotion({
@@ -151,7 +155,7 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
           });
         }
       });
-      const unsubscribeLocation = bridge.onAppLocationChanged(setLocation);
+      const unsubscribeLocation = bridge.onAppLocationChanged(value=>{if(sensorsEnabled.current)setLocation(value);});
       const unsubscribeDevice = bridge.onDeviceStatusChanged((device) => {
         if (typeof device.batteryLevel === 'number' && device.batteryLevel >= 0 && device.batteryLevel <= 100) setBattery(device.batteryLevel);
         if (device.connectType === sdk.DeviceConnectType.Disconnected || device.connectType === sdk.DeviceConnectType.ConnectionFailed) {
@@ -174,6 +178,7 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
       setStatus("connected");
       setMessage("G2 connected · temple and paired R1 input enabled · contextual menu ready.");
       if (!autoSensors) return true;
+      sensorsEnabled.current=true;
       // Sensor permission failures must not take down a working reminder display.
       try {
       await bridge.imuControl(true, sdk.ImuReportPace.P500);
@@ -192,6 +197,8 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
       if (currentLocation) setLocation(currentLocation);
       setSensorsActive(true);
       } catch {
+        sensorsEnabled.current=false;
+        await Promise.allSettled([bridge.imuControl(false),bridge.stopAppLocationUpdates()]);
         if (revision === connectionRevision.current) setMessage("G2 connected. Location or motion permission is unavailable.");
       }
       return true;
@@ -216,21 +223,24 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
   const setSensors = useCallback(async (enabled: boolean) => {
     const bridge = bridgeRef.current;
     if (!bridge) return;
-    const sdk = await import("@evenrealities/even_hub_sdk");
-    if (bridgeRef.current !== bridge) return;
-    if (!enabled) {
-      await Promise.all([bridge.imuControl(false), bridge.stopAppLocationUpdates()]);
-      setSensorsActive(false);
-      setLocation(null);
-      setMotion(null);
-      return;
-    }
-    const motionEnabled = await bridge.imuControl(true, sdk.ImuReportPace.P500);
-    if (bridgeRef.current !== bridge) { await bridge.imuControl(false); return; }
-    const locationEnabled = await bridge.startAppLocationUpdates({ accuracy: sdk.AppLocationAccuracy.Medium, intervalMs: 5000, distanceFilter: 5 });
-    if (bridgeRef.current !== bridge) return;
-    setSensorsActive(motionEnabled || locationEnabled);
-    if (!motionEnabled || !locationEnabled) setMessage("G2 connected. Some sensor permissions were not granted.");
+    const revision=++sensorRevision.current;
+    sensorsEnabled.current=false;setSensorsActive(false);setLocation(null);setMotion(null);
+    const operation=sensorQueue.current.catch(()=>{}).then(async()=>{
+      if(bridgeRef.current!==bridge||revision!==sensorRevision.current)return;
+      try {
+        const sdk=await import('@evenrealities/even_hub_sdk');
+        if(!enabled){await Promise.all([bridge.imuControl(false),bridge.stopAppLocationUpdates()]);return;}
+        const motionEnabled=await bridge.imuControl(true,sdk.ImuReportPace.P500);
+        if(bridgeRef.current!==bridge||revision!==sensorRevision.current){await bridge.imuControl(false);return;}
+        const locationEnabled=await bridge.startAppLocationUpdates({accuracy:sdk.AppLocationAccuracy.Medium,intervalMs:5000,distanceFilter:5});
+        if(bridgeRef.current!==bridge||revision!==sensorRevision.current||!motionEnabled||!locationEnabled){await Promise.allSettled([bridge.imuControl(false),bridge.stopAppLocationUpdates()]);return;}
+        sensorsEnabled.current=true;setSensorsActive(true);
+      } catch {
+        await Promise.allSettled([bridge.imuControl(false),bridge.stopAppLocationUpdates()]);
+        if(revision===sensorRevision.current)setMessage('G2 connected. Sensor permission is unavailable.');
+      }
+    });
+    sensorQueue.current=operation;await operation;
   }, []);
 
   const readStorage = useCallback(async (key: string) => bridgeRef.current?.getLocalStorage(key) ?? "", []);

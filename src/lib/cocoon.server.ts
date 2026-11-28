@@ -66,6 +66,7 @@ export async function askCocoon({
   if (!baseUrl || !apiKey) return { mode: "demo", text: demoCocoonAnswer(nextReminder) };
 
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/v1/chat/completions`;
+  if (new URL(endpoint).protocol !== 'https:') throw new Error('Cocoon requires a secure HTTPS endpoint');
   const response = await fetch(endpoint, {
     method: "POST",
     redirect: "manual",
@@ -84,9 +85,9 @@ export async function askCocoon({
   });
 
   if (!response.ok) {
-    const body = await response.text();
-    console.error(`Cocoon request failed [${response.status}]: ${body}`);
-    throw new Error(`Cocoon request failed [${response.status}]: ${body}`);
+    // Provider bodies can echo private family facts or credentials.
+    console.error(`Cocoon request failed [${response.status}]`);
+    throw new Error(`Cocoon request failed [${response.status}]`);
   }
 
   const completion = completionSchema.parse(await response.json());

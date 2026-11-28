@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCommand } from "./engine";
+import { parseCommand,answerQuestion } from "./engine";
 describe("family commands", () => {
   it("parses a reminder with detail", () => {
     const r = parseCommand("/remind 14:00 Blue pill — with water");
@@ -14,5 +14,12 @@ describe("family commands", () => {
   it("parses a person", () => {
     const r = parseCommand("/person Anna | daughter | visits Sundays");
     expect(r.kind === "person" && r.person.relation).toBe("daughter");
+  });
+  it('never identifies Joanna as Anna from a partial name',()=>{
+    expect(answerQuestion('Who is Joanna?',[{name:'Anna',relation:'daughter',note:'Visits Sundays'}],[],840)).not.toContain('your daughter');
+    expect(answerQuestion('Who is Anna?',[{name:'Anna',relation:'daughter',note:'Visits Sundays'}],[],840)).toContain('Anna, your daughter');
+  });
+  it('does not select the first person when a question names two people',()=>{
+    expect(answerQuestion('Who are Anna and Peter?',[{name:'Anna',relation:'daughter',note:''},{name:'Peter',relation:'son',note:''}],[],840)).toBe('Please ask about one person by their full name.');
   });
 });

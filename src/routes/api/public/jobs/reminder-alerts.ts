@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
         const { recordScheduledEvent, runCareAvailability, runCareDigest } = await import("@/lib/care/alerts.server");
         const { preferences } = await import("@/lib/care/service.server");
         const { effectiveTime, inQuietPeriod } = await import("@/lib/care/rules");
-        const { data: circles, error } = await supabaseAdmin.from("care_circles").select("id, telegram_chat_id, timezone, summary_time, summary_sent_on, preferences").order("id").limit(1000);
+        const { data: circles, error } = await supabaseAdmin.from("care_circles").select("id, telegram_chat_id, timezone, summary_time, summary_sent_on, preferences, deletion_pending").order("id").limit(1000);
         if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
         let sent = 0;
         let emailsSent = 0;
@@ -26,6 +26,8 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
         let emailsFailed = 0;
         const failures: string[] = [];
         const send = async (chatId: number, text: string) => {
+          const {chatStarted}=await import('@/lib/telegram-permission.server');
+          if(!await chatStarted(supabaseAdmin,chatId)){failures.push('Chat has not started the bot; no message sent');return false;}
           if (!connectionKey) { failures.push("Telegram not linked; approved email alerts are still attempted"); return false; }
           const res = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
             method: "POST",
@@ -47,6 +49,11 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
         };
 
         for (const circle of circles ?? []) {
+          if (circle.deletion_pending) {
+            try { const { eraseFamilyData } = await import('@/lib/care/erase.server'); await eraseFamilyData(supabaseAdmin, circle.id); }
+            catch { failures.push('Private family cleanup is pending and will be retried'); }
+            continue;
+          }
           const { date, minute } = localClock(new Date(), circle.timezone);
           let recipient: string | null = null;
           try {

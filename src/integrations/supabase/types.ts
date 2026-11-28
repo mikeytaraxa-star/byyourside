@@ -46,6 +46,7 @@ export type Database = {
       care_circles: {
         Row: {
           created_at: string
+          deletion_pending: boolean
           display_name: string
           findme_requested_at: string | null
           id: string
@@ -57,6 +58,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deletion_pending?: boolean
           display_name?: string
           findme_requested_at?: string | null
           id?: string
@@ -68,6 +70,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deletion_pending?: boolean
           display_name?: string
           findme_requested_at?: string | null
           id?: string
@@ -677,12 +680,24 @@ export type Database = {
         }
         Returns: Json
       }
+      care_begin_erase: { Args: { p_circle: string }; Returns: boolean }
       care_claim_access: {
         Args: { p_hash: string; p_token_hash: string }
         Returns: string
       }
       care_claim_invitation: {
         Args: { p_chat: number; p_hash: string; p_name: string; p_user: number }
+        Returns: string
+      }
+      care_edit_entity: {
+        Args: {
+          p_circle: string
+          p_delete?: boolean
+          p_entity: string
+          p_id: string
+          p_label: string
+          p_values: Json
+        }
         Returns: string
       }
       care_routine_step: {
@@ -694,6 +709,10 @@ export type Database = {
           p_step: number
         }
         Returns: number
+      }
+      care_undo_entity: {
+        Args: { p_circle: string; p_history: string }
+        Returns: boolean
       }
     }
     Enums: {

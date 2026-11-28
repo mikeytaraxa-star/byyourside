@@ -11,8 +11,8 @@ import { Route as alerts } from '@/routes/api/public/jobs/reminder-alerts'
 type Row = Record<string, unknown>
 function serviceStore() {
   const tables: Record<string, Row[]> = {
-    telegram_updates: [],
-    care_members: [{ id: 'member', circle_id: 'circle', telegram_user_id: 9, role: 'owner', revoked_at: null, notify_order: 0, direct_chat_id: null }],
+    telegram_updates: [{update_id:-1,chat_id:7,telegram_user_id:7,text:'/start',created_at:'2026-11-27T00:00:00Z',raw_update:{}}],
+    care_members: [{ id: 'member', circle_id: 'circle', telegram_user_id: 7, role: 'owner', revoked_at: null, notify_order: 0, direct_chat_id: null }],
     care_occurrences: [], care_events: [], g2_devices: [],
     care_circles: [{ id: 'circle', telegram_chat_id: 7, summary_time: 'off', timezone: 'UTC', summary_sent_on: null }],
     reminders: [{ id: 'pill', circle_id: 'circle', local_time: '08:00:00', title: 'Blue pill', detail: null, nudged_on: null, alerted_on: null, confirmed_on: null, critical: false, missed_streak: 0, last_missed_on: null }],
@@ -75,6 +75,14 @@ const postAlerts = (alerts as unknown as Endpoint).options.server.handlers.POST
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.resetAllMocks() })
 
 describe('signed Telegram → mailbox approval → scheduled parallel alert', () => {
+  it('never stores care facts or replies to a chat that has not started the bot',async()=>{
+    vi.stubEnv('TELEGRAM_API_KEY','test-connection-key');vi.stubEnv('LOVABLE_API_KEY','test-managed-key');
+    const store=serviceStore();store.tables['telegram_updates']=[];database.client=store.client;
+    const send=vi.fn();vi.stubGlobal('fetch',send);
+    const signature=createHash('sha256').update('telegram-webhook:test-connection-key').digest('base64url');
+    const response=await postWebhook({request:new Request('https://app.example/api/public/telegram/webhook',{method:'POST',headers:{'Content-Type':'application/json','X-Telegram-Bot-Api-Secret-Token':signature},body:JSON.stringify({update_id:1,message:{chat:{id:7},from:{id:7},text:'/remind 14:00 Private pill'}})})});
+    expect(response.status).toBe(200);expect(send).not.toHaveBeenCalled();expect(store.tables['telegram_updates']).toHaveLength(0);expect(store.tables['reminders']).toHaveLength(1);
+  });
   it('sends welcome buttons and processes a tapped button through the signed command handler', async () => {
     vi.stubEnv('TELEGRAM_API_KEY', 'test-connection-key')
     vi.stubEnv('LOVABLE_API_KEY', 'test-managed-key')
@@ -88,15 +96,16 @@ describe('signed Telegram → mailbox approval → scheduled parallel alert', ()
     const signature = createHash('sha256').update('telegram-webhook:test-connection-key').digest('base64url')
     const send = (id: number, text: string) => postWebhook({ request: new Request('https://app.example/api/public/telegram/webhook', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Telegram-Bot-Api-Secret-Token': signature },
-      body: JSON.stringify({ update_id: id, message: { chat: { id: 7 }, from: { id: 9 }, text } }),
+      body: JSON.stringify({ update_id: id, message: { chat: { id: 7 }, from: { id: 7 }, text } }),
     }) })
+    store.tables['telegram_updates']=[];
     expect((await send(1, '/start')).status).toBe(200)
     expect(bodies[0]?.['reply_markup']).toMatchObject({ keyboard: expect.any(Array), resize_keyboard: true, is_persistent: true })
     expect((await send(2, '📝 Add reminder')).status).toBe(200)
     expect(store.tables['reminders']).toHaveLength(1)
-    expect(store.tables['telegram_updates']?.[1]?.['text']).toBe('/remind')
+    expect(store.tables['telegram_updates']?.find(r=>r['update_id']===2)?.['text']).toBe('/remind')
     expect((await send(3, '🌙 Daily summary')).status).toBe(200)
-    expect(store.tables['telegram_updates']?.[2]?.['text']).toBe('/summary')
+    expect(store.tables['telegram_updates']?.find(r=>r['update_id']===3)?.['text']).toBe('/summary')
     expect(store.tables['care_circles']?.[0]?.['summary_time']).toBe('off')
     expect(bodies).toHaveLength(3)
     expect(bodies[1]?.['reply_markup']).toBeUndefined()
@@ -115,7 +124,7 @@ describe('signed Telegram → mailbox approval → scheduled parallel alert', ()
     const signature = createHash('sha256').update('telegram-webhook:test-connection-key').digest('base64url')
     const message = (id: number, text: string) => new Request('https://app.example/api/public/telegram/webhook', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Telegram-Bot-Api-Secret-Token': signature },
-      body: JSON.stringify({ update_id: id, message: { chat: { id: 7 }, from: { id: 9 }, text } }),
+      body: JSON.stringify({ update_id: id, message: { chat: { id: 7 }, from: { id: 7 }, text } }),
     })
     expect((await postWebhook({ request: message(1, '/email anna@example.com') })).status).toBe(200)
     expect(emailSend).toHaveBeenCalledWith('verify-email', 'anna@example.com', expect.any(Object))

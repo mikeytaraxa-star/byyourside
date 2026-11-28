@@ -4,6 +4,11 @@ export const Route=createFileRoute('/api/public/care/workspace')({server:{handle
   if(!actor)return Response.json({error:'Your access expired. Send /family for a new code.'},{status:401,headers:{'Cache-Control':'no-store'}});
   const {requestSchema}=await import('@/lib/care/schemas');const parsed=requestSchema.safeParse(await request.json().catch(()=>null));
   if(!parsed.success)return Response.json({error:'Please check the fields and try again.'},{status:400});
+  if(parsed.data.op==='logout'){
+    const {careHash}=await import('@/lib/care/auth.server');const token=(request.headers.get('Authorization')??'').replace(/^Bearer\s+/i,'');
+    const {error}=await actor.client.from('care_sessions').delete().eq('token_hash',await careHash(token)).eq('member_id',actor.member.id);
+    return Response.json(error?{error:'Could not end the session'}:{ok:true},{status:error?500:200,headers:{'Cache-Control':'no-store'}});
+  }
   try{const {careOperation}=await import('@/lib/care/service.server');return Response.json(await careOperation(actor,parsed.data),{headers:{'Cache-Control':'no-store'}});}
   catch(error){const message=error instanceof Error?error.message:'Could not save this change';return Response.json({error:message},{status:message.includes('permission')?403:400,headers:{'Cache-Control':'no-store'}});}
 }}}});

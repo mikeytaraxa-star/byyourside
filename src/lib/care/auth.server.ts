@@ -14,7 +14,9 @@ export async function resolveFamily(request: Request) {
   const {data:session} = await client.from('care_sessions').select('member_id').eq('token_hash',await careHash(token)).gt('expires_at',new Date().toISOString()).maybeSingle();
   if (!session) return null;
   const {data:member}=await client.from('care_members').select('*').eq('id',session.member_id).is('revoked_at',null).maybeSingle();
-  return member ? {client,member,circleId:member.circle_id} : null;
+  if(!member)return null;
+  const {data:circle}=await client.from('care_circles').select('id').eq('id',member.circle_id).eq('deletion_pending',false).maybeSingle();
+  return circle ? {client,member,circleId:member.circle_id} : null;
 }
 export type FamilyActor = NonNullable<Awaited<ReturnType<typeof resolveFamily>>>;
 export async function issueCode(client: CareClient, memberId: string) {

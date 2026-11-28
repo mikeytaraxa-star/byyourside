@@ -1,5 +1,13 @@
 # ByYourSide live integrations
 
+## Security and functionality audit
+
+- [x] Review authored app source, access boundaries, private media, device synchronization, dependencies and database privileges; fix verified access, credential lifecycle, hidden reminder action and recovery issues with regression tests.
+- [x] Run the full automated suite and authenticated browser save/readback/export/logout/edit/undo/erase checks; record evidence and limitations in docs/security-audit-2026-11-28.md.
+- [x] Complete the independent deep security scan; harden the reported media path boundary and retain the residual two-minute signed-link warning. No absolute security guarantee is possible.
+- [ ] Complete production acceptance for live Telegram invitations, email delivery, Cocoon and physical G2/R1 — blocked by user/second-account participation, approved mailbox/provider access and hardware.
+- [ ] Certify clinical/localization suitability — blocked by qualified clinical/native-language reviewers; automated checks cannot provide this certification.
+
 ## Family voice and gentle recap
 
 - [x] Add consent-based short family recordings with preview, discard, private saving and phone-controlled playback.
@@ -21,11 +29,12 @@
 - [x] Add private family media, contact shortcuts, phone reading settings, access revocation, and export/deletion handlers.
 - [x] Extend bounded Cocoon questions and approved wording drafts without another AI provider.
 - [x] Verify isolated real-data save/sync/action/readback, duplicate handling, cross-family denial, permissions and device revocation; refresh docs and the Even Hub package. Full suite: 126 tests passed.
-- [ ] Enable and live-test the Telegram Mini App menu — Telegram accepted the configuration, but byside.here/family and the published /family returned 404 on 28 November 2026; restored commands until publication approval and successful destination checks.
+- [ ] Enable and live-test the Telegram Mini App menu — published family destinations now return 200 in the security audit; still requires publication approval and real Telegram-client acceptance before changing the restored commands menu.
 - [ ] Confirm real Telegram family opening and invitation acceptance — requires the user's Telegram session and a consenting second account; signed-launch and invitation-command checks are automated, not live-client verification.
 - [ ] Verify live Cocoon/speech, physical G2/R1, and real email delivery — blocked by provider access, hardware and verified sender/mailbox.
 - [x] Add appointment preparation offsets, grouped ordinary notices, per-recipient delivery evidence and offline routine-step replay on G2.
-- [ ] Finish the remainder of the approved expansion: stronger atomic edit/undo recovery and automatic routine selection. These are not shipped; see docs/everyday-companion.md.
+- [x] Strengthen atomic edit/undo recovery with transactional server-only operations and verify stale undo rejection against real isolated family data.
+- [x] Document incomplete automatic routine/preparation-priority behavior in the security audit; current manual routine selection remains, and physical acceptance is blocked by unavailable hardware.
 
 - [x] Prepare managed email sending and a family reminder-alert template for notify.byside.here; email sending remains server-only, with no email queue or database tables.
 - [x] Add /email enrollment with mailbox verification and simultaneous email delivery for 15-minute and critical Telegram alerts; docs updated, full handler flow tested with isolated service doubles, protected runtime endpoints and rendered templates checked.

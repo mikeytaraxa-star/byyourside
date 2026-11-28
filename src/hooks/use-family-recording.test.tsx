@@ -45,4 +45,18 @@ describe('family voice recording', () => {
     act(() => result.current.setConsent(true)); await act(async () => { await result.current.start(); });
     unmount(); expect(f.stop).toHaveBeenCalled(); expect(URL.createObjectURL).not.toHaveBeenCalled(); expect(f.fetch).not.toHaveBeenCalled();
   });
+  it('does not stop a newer recording when an obsolete permission request fails',async()=>{
+    const f=setup();let rejectOld:(reason:Error)=>void=()=>{};
+    f.getUserMedia.mockImplementationOnce(()=>new Promise((_resolve,reject)=>{rejectOld=reject;}));
+    const {result,unmount}=renderHook(useFamilyRecording);
+    act(()=>result.current.setConsent(true));
+    let old:Promise<void>=Promise.resolve();act(()=>{old=result.current.start();});
+    act(()=>result.current.discard());
+    await act(async()=>{await result.current.start();});
+    expect(result.current.status).toBe('recording');
+    const stopped=f.stop.mock.calls.length;
+    await act(async()=>{rejectOld(new Error('Old request denied'));await old;});
+    expect(f.stop).toHaveBeenCalledTimes(stopped);
+    expect(result.current.status).toBe('recording');unmount();
+  });
 });

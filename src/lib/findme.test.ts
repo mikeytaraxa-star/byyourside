@@ -12,6 +12,16 @@ describe('findme', () => {
     expect(validLocation({ latitude: 95, longitude: 10 })).toBeNull();
     expect(validLocation({ latitude: 52.52, longitude: 13.4, accuracy: 12 })).toEqual({ lat: 52.52, lng: 13.4, accuracy: 12 });
   });
+  it('never treats missing or string coordinates as a real shared position',()=>{
+    expect(validLocation({latitude:null,longitude:null})).toBeNull();
+    expect(validLocation({latitude:'',longitude:''})).toBeNull();
+    expect(validLocation({latitude:'52.52',longitude:13.4})).toBeNull();
+    expect(validLocation({latitude:0,longitude:0,accuracy:null})).toEqual({lat:0,lng:0,accuracy:null});
+  });
+  it('rejects future and invalid location timestamps',()=>{
+    expect(isFresh('2099-01-01',now)).toBe(false);
+    expect(isFresh('not-a-date',now)).toBe(false);
+  });
   it('treats a location older than 10 minutes as stale', () => {
     expect(isFresh('2026-11-24T09:51:00Z', now)).toBe(true);
     expect(isFresh('2026-11-24T09:49:00Z', now)).toBe(false);

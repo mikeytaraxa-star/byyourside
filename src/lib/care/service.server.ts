@@ -8,7 +8,7 @@ import {preferencesSchema,requestSchema,actionSchema} from './schemas';
 import {readingPreferences,effectiveTime,reminderOnDate,approvedAnswer} from './rules';
 import {careHash,type CareClient,type FamilyActor} from './auth.server';
 import {sendTelegramMessage} from '@/lib/g2-sync.server';
-import {validateFamilyFile} from './family-moments';
+import {validateFamilyFile,familyMediaPath} from './family-moments';
 export function preferences(raw:Json):CarePreferences{const parsed=preferencesSchema.safeParse({...defaultPreferences,...(raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{})});return readingPreferences(parsed.success?parsed.data:defaultPreferences);}
 function check(error:{message:string}|null){if(error)throw new Error('Could not save this change. Please try again.');}
 export async function loadCare(client:CareClient,circleId:string,member:CareWorkspace['member']):Promise<CareWorkspace>{
@@ -89,18 +89,10 @@ export async function careOperation(actor:FamilyActor,input:z.infer<typeof reque
       if(input.recap_date && input.category!=='message')throw new Error('Only an approved positive family message can appear in the day recap.');
       values={id,circle_id:circleId,label:input.label,answer:input.answer,category:input.category,phone:input.phone,recap_date:input.recap_date,updated_at:at};
     }
-    // The explicit branches retain generated database typing for different table shapes.
-    if(input.op==='reminder'){const {error}=await client.from('reminders').upsert(values as DatabaseReminder);check(error);}
-    if(input.op==='routine'){const {error}=await client.from('care_routines').upsert(values as DatabaseRoutine);check(error);}
-    if(input.op==='note'){const {error}=await client.from('care_notes').upsert(values as DatabaseNote);check(error);}
-    const {error}=await client.from('care_history').insert({circle_id:circleId,entity:input.op,entity_id:id,label:`${before?'Updated':'Added'} ${'title' in input?input.title:input.label}`,before_value:before as Json|null,after_version:at});check(error);return {ok:true,id};
+    const {error}=await client.rpc('care_edit_entity',{p_circle:circleId,p_entity:input.op,p_id:id,p_values:values as Json,p_label:`${before?'Updated':'Added'} ${'title' in input?input.title:input.label}`,p_delete:false});check(error);return {ok:true,id};
   }
   if(input.op==='delete'){
-    const table=entityTable[input.entity];const {data:row}=await client.from(table).select('*').eq('id',input.id).eq('circle_id',circleId).single();if(!row)throw new Error('Item unavailable');
-    const at=new Date().toISOString();
-    if(input.entity==='reminder'){const {error}=await client.from('reminders').update({deleted_at:at,updated_at:at}).eq('id',input.id).eq('circle_id',circleId);check(error);}
-    else {const {error}=await client.from(table).delete().eq('id',input.id).eq('circle_id',circleId);check(error);}
-    check((await client.from('care_history').insert({circle_id:circleId,entity:input.entity,entity_id:input.id,label:'Removed item',before_value:row as Json,after_version:at})).error);return {ok:true};
+    check((await client.rpc('care_edit_entity',{p_circle:circleId,p_entity:input.entity,p_id:input.id,p_values:{},p_label:'Removed item',p_delete:true})).error);return {ok:true};
   }
   if(input.op==='settings'){
     if(!isValidTimeZone(input.timezone))throw new Error('Choose a valid time zone.');
@@ -125,16 +117,9 @@ export async function careOperation(actor:FamilyActor,input:z.infer<typeof reque
   }
   if(input.op==='revoke-device'){check((await client.from('g2_devices').delete().eq('id',input.id).eq('circle_id',circleId)).error);return {ok:true};}
   if(input.op==='undo'){
-    const {data:entry}=await client.from('care_history').select('*').eq('id',input.id).eq('circle_id',circleId).is('undone_at',null).single();if(!entry)throw new Error('Change unavailable');
-    const entity=z.enum(['reminder','routine','note']).parse(entry.entity),table=entityTable[entity];
-    const {data:current}=await client.from(table).select('updated_at').eq('id',entry.entity_id).eq('circle_id',circleId).maybeSingle();if(current&&Date.parse(current.updated_at)!==Date.parse(entry.after_version))throw new Error('A newer change exists. Undo would overwrite it.');
-    if(entry.before_value&&typeof entry.before_value==='object'&&!Array.isArray(entry.before_value)){
-      const value={...entry.before_value,id:entry.entity_id,circle_id:circleId,updated_at:new Date().toISOString()};
-      if(entity==='reminder')check((await client.from('reminders').upsert(value as DatabaseReminder)).error);
-      if(entity==='routine')check((await client.from('care_routines').upsert(value as DatabaseRoutine)).error);
-      if(entity==='note')check((await client.from('care_notes').upsert(value as DatabaseNote)).error);
-    } else check((await client.from(table).delete().eq('id',entry.entity_id).eq('circle_id',circleId)).error);
-    check((await client.from('care_history').update({undone_at:new Date().toISOString()}).eq('id',entry.id).eq('circle_id',circleId)).error);return {ok:true};
+    const {error}=await client.rpc('care_undo_entity',{p_circle:circleId,p_history:input.id});
+    if(error)throw new Error(error.message.includes('newer change')?'A newer change exists. Undo would overwrite it.':'Change unavailable.');
+    return {ok:true};
   }
   if(input.op==='question'){
     const workspace=await loadCare(client,circleId,{id:member.id,role:member.role as 'owner'|'editor'|'viewer',member_name:member.member_name});
@@ -151,28 +136,29 @@ export async function careOperation(actor:FamilyActor,input:z.infer<typeof reque
     let email='not_enrolled';if(circle){const {loadFamilyEmail}=await import('@/lib/email-alerts.server');const {emailRecipient}=await import('@/lib/email-alerts');const recipient=emailRecipient((await loadFamilyEmail(client,circle.telegram_chat_id))?.state??null);if(recipient){const {sendTemplateEmail}=await import('@/lib/email-templates/send-email');try{const result=await sendTemplateEmail('readiness-test',recipient,{templateData:{requestedBy:member.member_name},idempotencyKey:`care-test-${id}`});email=result.sent?'accepted':'suppressed';}catch{email='failed';}}}
     return {ok:true,telegram:telegram?'accepted':'failed',email};
   }
-  if(input.op==='export'){return {ok:true,export:await loadCare(client,circleId,{id:member.id,role:'owner',member_name:member.member_name})};}
+  if(input.op==='export'){
+    const exported:Record<string,unknown>={format:'ByYourSide care records v1',exportedAt:new Date().toISOString(),media:'Private media files are referenced, not embedded. Provider logs and access credentials are excluded.'};
+    const circleResult=await client.from('care_circles').select('*').eq('id',circleId);check(circleResult.error);exported['care_circles']=circleResult.data;
+    for(const table of ['reminders','care_occurrences','care_routines','care_notes','people','care_events','care_history','care_members'] as const){
+      const rows:unknown[]=[];let offset=0;
+      for(;;){const result=await client.from(table).select('*').eq('circle_id',circleId).order(table==='care_occurrences'?'reminder_id':'id').range(offset,offset+499);check(result.error);rows.push(...result.data??[]);if(!result.data||result.data.length<500)break;offset+=500;}
+      exported[table]=rows;
+    }
+    return {ok:true,export:exported};
+  }
   if(input.op==='erase'){
-    const {data:circle}=await client.from('care_circles').select('telegram_chat_id').eq('id',circleId).single();
-    const {data:notes}=await client.from('care_notes').select('media_path').eq('circle_id',circleId);const paths=(notes??[]).map(n=>n.media_path).filter((p):p is string=>Boolean(p));if(paths.length)check((await client.storage.from('care-family-media').remove(paths)).error);
-    for(const table of ['care_occurrences','care_events','care_history','care_routines','care_notes','pairing_codes','g2_devices','people','reminders'] as const)check((await client.from(table).delete().eq('circle_id',circleId)).error);
-    if(circle)check((await client.from('telegram_updates').delete().eq('chat_id',circle.telegram_chat_id)).error);
-    check((await client.from('care_members').update({revoked_at:new Date().toISOString(),notify_order:0}).eq('circle_id',circleId)).error);
-    check((await client.from('care_circles').update({display_name:'Your Loved One',preferences:{},summary_time:'off'}).eq('id',circleId)).error);return {ok:true,erased:true};
+    const {eraseFamilyData}=await import('./erase.server');await eraseFamilyData(client,circleId);return {ok:true,erased:true};
   }
   if(input.op==='media-read'||input.op==='media'||input.op==='media-remove'){
     const {data:note}=await client.from('care_notes').select('id,media_path').eq('id',input.noteId).eq('circle_id',circleId).single();if(!note)throw new Error('Note unavailable');
+    if(note.media_path&&!familyMediaPath(note.media_path,circleId,note.id))throw new Error('Media unavailable');
     if(input.op==='media-read'){if(!note.media_path)return {ok:true,url:null};const {data,error}=await client.storage.from('care-family-media').createSignedUrl(note.media_path,120);check(error);return {ok:true,url:data?.signedUrl??null};}
     if(input.op==='media-remove'){if(note.media_path)check((await client.storage.from('care-family-media').remove([note.media_path])).error);check((await client.from('care_notes').update({media_path:null,media_kind:null}).eq('id',note.id).eq('circle_id',circleId)).error);return {ok:true};}
     if((input.kind==='photo')!==input.mime.startsWith('image/'))throw new Error('Choose a matching photo or audio file.');
     let bytes:Uint8Array;try{bytes=Uint8Array.from(atob(input.data),c=>c.charCodeAt(0));}catch{throw new Error('Invalid media file');}validateFamilyFile(bytes.length,input.mime);
     const path=`${circleId}/${note.id}/${crypto.randomUUID()}`;const {error}=await client.storage.from('care-family-media').upload(path,bytes,{contentType:input.mime,upsert:false});check(error);
-    const {error:saved}=await client.from('care_notes').update({media_path:path,media_kind:input.kind}).eq('id',note.id).eq('circle_id',circleId);if(saved){await client.storage.from('care-family-media').remove([path]);check(saved);}
+    const {data:savedRows,error:saved}=await client.from('care_notes').update({media_path:path,media_kind:input.kind}).eq('id',note.id).eq('circle_id',circleId).select('id');if(saved||!savedRows?.length){await client.storage.from('care-family-media').remove([path]);throw new Error('Could not save this media. Please refresh the family note.');}
     if(note.media_path)await client.storage.from('care-family-media').remove([note.media_path]);return {ok:true};
   }
   return {ok:false};
 }
-import type {Database} from '@/integrations/supabase/types';
-type DatabaseReminder=Database['public']['Tables']['reminders']['Insert'];
-type DatabaseRoutine=Database['public']['Tables']['care_routines']['Insert'];
-type DatabaseNote=Database['public']['Tables']['care_notes']['Insert'];

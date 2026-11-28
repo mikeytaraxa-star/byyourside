@@ -50,9 +50,17 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const path=new URL(request.url).pathname;
+      const contentLength=Number(request.headers.get('content-length')??0);
+      if(path.startsWith('/api/public/')&&contentLength>7_100_000)return Response.json({error:'Request too large'},{status:413,headers:{'Cache-Control':'no-store'}});
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized=await normalizeCatastrophicSsrResponse(response);
+      const headers=new Headers(normalized.headers);
+      headers.set('X-Content-Type-Options','nosniff');
+      headers.set('Referrer-Policy','no-referrer');
+      if(path.startsWith('/api/')||path.startsWith('/family')||path==='/companion')headers.set('Cache-Control','no-store');
+      return new Response(normalized.body,{status:normalized.status,statusText:normalized.statusText,headers});
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

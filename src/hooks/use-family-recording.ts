@@ -64,13 +64,12 @@ export function useFamilyRecording() {
           setBlob(recording); setUrl(preview.current); setStatus('preview');
         } catch (e) { setError(e instanceof Error ? e.message : 'Recording failed.'); setStatus('idle'); }
       };
-      capture.onerror = () => { discard(); setError('Recording failed. Please try again.'); };
+      capture.onerror = () => { if(ticket !== generation.current)return; discard(); setError('Recording failed. Please try again.'); };
       capture.start(); setSeconds(0); setStatus('recording');
       let elapsed = 0;
       timer.current = setInterval(() => { elapsed++; setSeconds(elapsed); if (elapsed >= RECORDING_SECONDS) stop(); }, 1000);
     } catch (e) {
-      cleanup();
-      if (ticket === generation.current) { setError(e instanceof Error ? e.message : 'Microphone unavailable.'); setStatus('idle'); }
+      if (ticket === generation.current) { cleanup(); setError(e instanceof Error ? e.message : 'Microphone unavailable.'); setStatus('idle'); }
     }
   };
   return { consent, setConsent, status, seconds, blob, url, error, start, stop, discard };

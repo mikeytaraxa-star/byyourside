@@ -10,10 +10,10 @@ export type SharedLocation = { lat: number; lng: number; accuracy: number | null
 export function validLocation(value: unknown): Omit<SharedLocation, 'at'> | null {
   if (!value || typeof value !== 'object') return null;
   const v = value as Record<string, unknown>;
-  const lat = Number(v['latitude']), lng = Number(v['longitude']);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  const acc = Number(v['accuracy']);
-  return { lat, lng, accuracy: Number.isFinite(acc) && acc >= 0 ? acc : null };
+  const lat = v['latitude'], lng = v['longitude'];
+  if (typeof lat !== 'number' || typeof lng !== 'number' || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  const acc = v['accuracy'];
+  return { lat, lng, accuracy: typeof acc === 'number' && Number.isFinite(acc) && acc >= 0 ? acc : null };
 }
 
 export function ageLabel(at: string, now: Date) {
@@ -25,7 +25,8 @@ export function ageLabel(at: string, now: Date) {
 }
 
 export function isFresh(at: string, now: Date) {
-  return now.getTime() - new Date(at).getTime() <= FINDME_FRESH_MINUTES * 60_000;
+  const age = now.getTime() - new Date(at).getTime();
+  return Number.isFinite(age) && age >= 0 && age <= FINDME_FRESH_MINUTES * 60_000;
 }
 
 /** Body for Telegram sendVenue — renders as a map card with title and address line. */

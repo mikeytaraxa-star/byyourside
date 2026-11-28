@@ -12,6 +12,7 @@ export const preferencesSchema = z.object({
 export const actionSchema = z.object({ reminderId: z.string().uuid(), action: z.enum(['done','later','help','decline','repeat','step']), key: z.string().uuid(), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), minutes: z.number().int().min(1).max(120).default(15) }).strict();
 export const requestSchema = z.discriminatedUnion('op', [
   z.object({op:z.literal('load')}),
+  z.object({op:z.literal('logout')}),
   z.object({op:z.literal('action'), ...actionSchema.shape}),
   z.object({op:z.literal('reminder'), id:z.string().uuid().optional(), title:z.string().trim().min(1).max(160),detail:z.string().max(300),local_time:time,critical:z.boolean(),snooze_minutes:z.number().int().min(0).max(120),date_override:date,lead_minutes:z.number().int().min(0).max(180).default(0)}),
   z.object({op:z.literal('routine'),id:z.string().uuid().optional(),title:z.string().trim().min(1).max(100),local_time:time,steps:z.array(z.string().trim().min(1).max(160)).min(1).max(12),enabled:z.boolean(),date_override:date}),

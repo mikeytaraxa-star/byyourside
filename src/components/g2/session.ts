@@ -12,7 +12,7 @@ export function restoreSession(raw: string, date = todayKey()): G2Session {
     if (!value || typeof value !== 'object' || !('reminders' in value) || !Array.isArray(value.reminders)) return emptySession();
     const reminders = value.reminders.filter((row): row is Reminder => Boolean(row && typeof row.id === 'string' && typeof row.time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(row.time) && typeof row.text === 'string' && row.text.length <= 300 && (row.detail === undefined || typeof row.detail === 'string') && (row.critical === undefined || typeof row.critical === 'boolean') && ['pending', 'done', 'missed'].includes(row.status) && (row.leadMinutes === undefined || (typeof row.leadMinutes === 'number' && row.leadMinutes >= 0 && row.leadMinutes <= 180)))).slice(0, 50);
     const sameDay = 'date' in value && value.date === date;
-    return { date, reminders: reminders.map(row => sameDay ? row : { ...row, status: 'pending', careState: 'pending', version: 0 }), selected: 0, sample: 'sample' in value && value.sample === true };
+    return { date, reminders: reminders.map(row => sameDay ? row : { ...row, time:row.originalTime??row.time, status: 'pending', careState: 'pending', version: 0 }), selected: 0, sample: 'sample' in value && value.sample === true };
   } catch { return emptySession(); }
 }
 export function applyG2Gesture(session: G2Session, gesture: Gesture, now: number): G2Session {

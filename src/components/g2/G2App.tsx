@@ -12,12 +12,14 @@ import { defaultPreferences, type CarePreferences, type CareNote, type CareRouti
 import { inQuietPeriod, canPostpone } from '@/lib/care/rules';
 import { fill, stringsFor, LANGUAGES, LANGUAGE_NAMES, type Language, textDirection } from '@/lib/i18n';
 import { controlsFor, nativeMenuFor } from '@/lib/i18n-controls';
+import { localClock, isValidTimeZone } from '@/lib/reminder-alerts';
 import { appendAction, appendRoutineStep, restoreOutbox, restoreRoutineSteps, pendingState, type PendingAction, type PendingRoutineStep } from '@/lib/care/outbox';
 const SUPPORT_KEY = 'byyourside.g2.support.v1';
 const OUTBOX_KEY = 'byyourside.g2.outbox.v1';
 const ROUTINE_KEY = 'byyourside.g2.routinesteps.v1';
 const STORAGE_KEY = 'byyourside.g2.schedule.v1';
 const PAIR_KEY = 'byyourside.g2.pairing.v1';
+const NATIVE_RESET_KEY = 'byyourside.g2.native-reset.v1';
 export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
   const [session, setSession] = useState<G2Session>(emptySession);
   const [ready, setReady] = useState(false);
@@ -41,7 +43,9 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
   const [careDate, setCareDate] = useState('');
   const outbox = useRef<PendingAction[]>([]);
   const routineQueue = useRef<PendingRoutineStep[]>([]);
-  const flushing = useRef(false);
+  const flushing = useRef<number | null>(null);
+  const pairingRevision = useRef(0);
+  const timezoneRef = useRef('');
   const syncRevision = useRef(0);
   const pairedRef = useRef<string | null>(null);
   const routine = routines.find(r => r.id === routineId);
@@ -54,7 +58,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
   const recordingRef = useRef(false);
   const nativeWriter = useRef<ReturnType<typeof latestUpdateQueue<string>> | null>(null);
   const autoConnected = useRef(false);
-  const minute = now ? now.getHours() * 60 + now.getMinutes() : 0;
+  const minute = now ? (pairToken && timezoneRef.current ? localClock(now,timezoneRef.current).minute : now.getHours() * 60 + now.getMinutes()) : 0;
   const hasClock = now !== null;
   const selected = session.reminders[session.selected];
   const missedCount = hasClock ? missedReminders(session, minute).length : 0;
@@ -83,16 +87,18 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
     setNow(date);
     const openMinute = date.getHours() * 60 + date.getMinutes();
     try { setSession(openingSelection(restoreSession(localStorage.getItem(STORAGE_KEY) ?? ''), openMinute)); } catch { setNotice('Phone storage unavailable.'); }
-    try { setPairToken(localStorage.getItem(PAIR_KEY)); outbox.current = restoreOutbox(localStorage.getItem(OUTBOX_KEY) ?? '[]'); routineQueue.current = restoreRoutineSteps(localStorage.getItem(ROUTINE_KEY) ?? '[]'); const support = JSON.parse(localStorage.getItem(SUPPORT_KEY) ?? '{}') as {preferences?:CarePreferences;notes?:CareNote[];routines?:CareRoutine[];date?:string}; if(support.preferences)setPreferences(support.preferences);if(support.notes)setNotes(support.notes);if(support.routines)setRoutines(support.routines);if(support.date)setCareDate(support.date); } catch { /* storage unavailable */ }
+    try { const savedToken=localStorage.getItem(PAIR_KEY);pairedRef.current=savedToken;setPairToken(savedToken); outbox.current = restoreOutbox(localStorage.getItem(OUTBOX_KEY) ?? '[]'); routineQueue.current = restoreRoutineSteps(localStorage.getItem(ROUTINE_KEY) ?? '[]'); const support = JSON.parse(localStorage.getItem(SUPPORT_KEY) ?? '{}') as {preferences?:CarePreferences;notes?:CareNote[];routines?:CareRoutine[];date?:string;timezone?:string}; if(savedToken){if(support.preferences)setPreferences(support.preferences);if(support.notes)setNotes(support.notes);if(support.routines)setRoutines(support.routines.map(r=>({...r,progress:Math.max(r.progress,...routineQueue.current.filter(s=>s.id===r.id&&s.date===support.date).map(s=>s.step))})));if(support.date)setCareDate(support.date);if(support.timezone&&isValidTimeZone(support.timezone))timezoneRef.current=support.timezone;} } catch { /* storage unavailable */ }
     setReady(true);
     let previousMinute = date.getHours() * 60 + date.getMinutes();
     const interval = setInterval(() => {
       const current = new Date();
-      const nextMinute = current.getHours() * 60 + current.getMinutes();
+      const clock=pairedRef.current&&timezoneRef.current?localClock(current,timezoneRef.current):{date:todayKey(current),minute:current.getHours()*60+current.getMinutes()};
+      const nextMinute = clock.minute;
       setNow(current);
       if (nextMinute !== previousMinute) {
         previousMinute = nextMinute;
-        setSession(old => dueSelection(old.date === todayKey(current) ? old : restoreSession(JSON.stringify(old), todayKey(current)), nextMinute));
+        setSession(old => dueSelection(old.date === clock.date ? old : restoreSession(JSON.stringify(old), clock.date), nextMinute));
+        setCareDate(clock.date);
       }
     }, 1000);
     return () => clearInterval(interval);
@@ -101,7 +107,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
   useEffect(() => {
     if (!ready) return;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(session)); } catch { setNotice('Phone storage unavailable.'); }
-    if (nativeLoaded && connected) nativeWriter.current?.push(JSON.stringify(session));
+    if (nativeLoaded && connected) nativeWriter.current?.push(JSON.stringify({...session,paired:Boolean(pairedRef.current)}));
   }, [session, ready, nativeLoaded, connected]);
 
   useEffect(() => {
@@ -112,7 +118,8 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
     }, () => setNotice('Even App could not save this schedule.'));
     void hub.readStorage(STORAGE_KEY).then(raw => {
       if (!active) return;
-      if (raw && !pairedRef.current) { const d = new Date(); setSession(openingSelection(restoreSession(raw), d.getHours() * 60 + d.getMinutes())); }
+      if (raw && !pairedRef.current && !localStorage.getItem(NATIVE_RESET_KEY)) { const saved=JSON.parse(raw) as {paired?:boolean};if(!saved.paired){const d = new Date(); setSession(openingSelection(restoreSession(raw), d.getHours() * 60 + d.getMinutes()));} }
+      if(localStorage.getItem(NATIVE_RESET_KEY)){nativeWriter.current?.push(JSON.stringify({...emptySession(),paired:false}));}
       setNativeLoaded(true);
     }).catch(() => { if (active) setNotice('Even App storage could not be read. Reconnect before saving changes.'); });
     return () => { active = false; nativeWriter.current?.stop(); nativeWriter.current = null; };
@@ -133,13 +140,15 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
 
 
   const api = useCallback(async (path: string, token: string | null, payload: unknown = {}) => {
-    const response = await fetch(`${syncOrigin(window.location)}/api/public/g2/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(payload) });
+    const revision=pairingRevision.current;
+    const response = await fetch(`${syncOrigin(window.location)}/api/public/g2/${path}`, { method: 'POST', signal:AbortSignal.timeout(15_000), headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(payload) });
     const data = await response.json().catch(() => ({})) as Record<string, unknown>;
+    if(revision!==pairingRevision.current||(token&&pairedRef.current!==token))throw new Error('Pairing changed');
     return { status: response.status, data };
   }, []);
   const locationRef = useRef(hub.location);
   locationRef.current = hub.location;
-  const unpair = useCallback(() => { pairedRef.current = null; outbox.current = []; routineQueue.current = []; try { localStorage.removeItem(PAIR_KEY); localStorage.removeItem(OUTBOX_KEY); localStorage.removeItem(ROUTINE_KEY); localStorage.removeItem(SUPPORT_KEY); localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } serverDone.current.clear(); setPairToken(null); setSyncState(''); setNotes([]); setRoutines([]); setPreferences(defaultPreferences); setSession(emptySession()); }, []);
+  const unpair = useCallback(() => { pairingRevision.current++;syncRevision.current++;pairedRef.current = null; outbox.current = []; routineQueue.current = []; try { localStorage.setItem(NATIVE_RESET_KEY,'1');localStorage.removeItem(PAIR_KEY); localStorage.removeItem(OUTBOX_KEY); localStorage.removeItem(ROUTINE_KEY); localStorage.removeItem(SUPPORT_KEY); localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ } serverDone.current.clear();setSupportDisplay(null);setMedia({});setQuestion('');setText('');setRoutineId('');setCareDate('');timezoneRef.current='';setVoiceConsent(false);audioRevision.current++;recordingRef.current=false;setRecording(false);if(audioTimer.current)clearTimeout(audioTimer.current);void hub.stopAudio().catch(()=>{});void hub.setSensors(false).catch(()=>{});nativeWriter.current?.push(JSON.stringify({...emptySession(),paired:false})); setPairToken(null); setSyncState(''); setNotes([]); setRoutines([]); setPreferences(defaultPreferences); setSession(emptySession()); }, [hub.stopAudio,hub.setSensors]);
   /**
    * Choose the language of the glasses prompts before pairing, so a caregiver setting up the
    * device sees the same words the wearer will. A paired family workspace overrides this.
@@ -156,14 +165,16 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
   useEffect(() => {
     if (!pairToken) return;
     pairedRef.current = pairToken;
+    const generation=pairingRevision.current;
     let active = true;
     const pull = async () => {
       try {
-        if (flushing.current) return;
-        flushing.current = true;
+        if (flushing.current===generation) return;
+        flushing.current = generation;
         for (const pending of [...outbox.current]) {
           if (!active || pairedRef.current !== pairToken) return;
           const sent = await api('action', pairToken, pending);
+          if(!active||pairedRef.current!==pairToken)return;
           if (sent.status === 401) { unpair(); return; }
           if (sent.status !== 200) { setNotice(typeof sent.data['error'] === 'string' ? sent.data['error'] : 'An offline action needs review.'); if(sent.status === 400)outbox.current=outbox.current.filter(a=>a.key!==pending.key); else break; }
           else outbox.current = outbox.current.filter(a => a.key !== pending.key);
@@ -172,6 +183,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
         for (const pending of [...routineQueue.current]) {
           if (!active || pairedRef.current !== pairToken) return;
           const sent = await api('support', pairToken, { op: 'routine-step', id: pending.id, date: pending.date, step: pending.step, key: pending.key });
+          if(!active||pairedRef.current!==pairToken)return;
           if (sent.status === 401) { unpair(); return; }
           if (sent.status !== 200) { setNotice('A saved routine step needs review.'); if (sent.status === 400) routineQueue.current = routineQueue.current.filter(s => s.key !== pending.key); else break; }
           else routineQueue.current = routineQueue.current.filter(s => s.key !== pending.key);
@@ -186,7 +198,9 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
         const serverDate = typeof data['date'] === 'string' ? data['date'] : todayKey();
         const rows = pendingState(data['reminders'] as Reminder[], outbox.current, serverDate);
         setCareDate(serverDate);
-        const support = {preferences: data['preferences'] as CarePreferences, notes: data['notes'] as CareNote[], routines: data['routines'] as CareRoutine[], date:serverDate};
+        const timezone=typeof data['timezone']==='string'&&isValidTimeZone(data['timezone'])?data['timezone']:'UTC';timezoneRef.current=timezone;
+        const serverRoutines=Array.isArray(data['routines'])?data['routines'] as CareRoutine[]:[];
+        const support = {preferences: data['preferences'] as CarePreferences, notes: data['notes'] as CareNote[], routines: serverRoutines.map(r=>({...r,progress:Math.max(r.progress,...routineQueue.current.filter(s=>s.id===r.id&&s.date===serverDate).map(s=>s.step))})), date:serverDate,timezone};
         if(support.preferences)setPreferences(support.preferences);if(Array.isArray(support.notes))setNotes(support.notes);if(Array.isArray(support.routines))setRoutines(support.routines);
         try { localStorage.setItem(SUPPORT_KEY,JSON.stringify(support)); } catch {}
         serverDone.current = new Set(rows.filter(r => r.status === 'done').map(r => r.id));
@@ -196,10 +210,10 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
           const reminders = rows.map(r => keepDone.has(r.id) ? { ...r, status: 'done' as const } : r);
           const same = old.reminders.length === reminders.length && old.reminders.every((r, i) => r.id === reminders[i]?.id);
           const next = { date: serverDate, sample: false, reminders, selected: same ? old.selected : 0 };
-          return same ? next : openingSelection(next, d.getHours() * 60 + d.getMinutes());
+          return same ? next : openingSelection(next, localClock(d,timezone).minute);
         });
         setSyncState(`Synced with Telegram · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
-      } catch { if (active) setSyncState(`Offline · saved reminders · ${outbox.current.length} choices waiting`); } finally { flushing.current = false; }
+      } catch { if (active) setSyncState(`Offline · saved reminders · ${outbox.current.length} choices waiting`); } finally { if(flushing.current===generation)flushing.current = null; }
     };
     void pull();
     const id = setInterval(() => void pull(), SYNC_INTERVAL_MS);
@@ -207,18 +221,20 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
   }, [pairToken, api, unpair]);
 
   const perform = useCallback(async (action: CareAction) => {
+    if(supportDisplay||routine||recording){setNotice('Return to today’s reminder before choosing a reminder action.');return;}
     const row = session.reminders[session.selected]; if(!row)return;
     syncRevision.current += 1;
     setSupportDisplay(null);setRoutineId('');
     if(action==='later'&&minute+15>1439){setNotice('Review tomorrow’s plan with your family.');return;}
     if(action==='later'&&!canPostpone({critical:row.critical??false,snooze_minutes:row.snoozeMinutes??0},15)){setNotice('Your family has not approved that postponement.');return;}
+    if(action==='later'&&pairToken&&!navigator.onLine){setNotice('Reconnect before postponing so the family receives the correct time.');return;}
     const pending:PendingAction={reminderId:row.id,action,key:crypto.randomUUID(),date:careDate||session.date,minutes:15};
     if(pairToken){try{outbox.current=appendAction(outbox.current,pending);localStorage.setItem(OUTBOX_KEY,JSON.stringify(outbox.current));}catch{setNotice('Could not safely save this choice. Reconnect before continuing.');return;}}
-    setSession(old=>({...old,reminders:old.reminders.map(r=>r.id===row.id?{...r,status:action==='done'?'done':r.status,careState:action==='done'?'done':action==='later'?'postponed':action==='help'?'help':action==='decline'?'declined':r.careState??'pending',time:action==='later'?fmt(minute+15):r.time}:r)}));
+    setSession(old=>({...old,reminders:old.reminders.map(r=>r.id===row.id?{...r,originalTime:r.originalTime??r.time,status:action==='done'?'done':r.status,careState:action==='done'?'done':action==='later'?'postponed':action==='help'?'help':action==='decline'?'declined':r.careState??'pending',time:action==='later'?fmt(minute+15):r.time}:r)}));
     if(!pairToken){setNotice('Saved on this phone only. Pair with your family to send choices.');return;}
     try{const sent=await api('action',pairToken,pending);if(sent.status===200){outbox.current=outbox.current.filter(a=>a.key!==pending.key);localStorage.setItem(OUTBOX_KEY,JSON.stringify(outbox.current));setNotice('Your choice reached the family schedule.');}else if(sent.status===401){unpair();setNotice('Pair again before sending choices.');}else if(sent.status===400){outbox.current=outbox.current.filter(a=>a.key!==pending.key);localStorage.setItem(OUTBOX_KEY,JSON.stringify(outbox.current));setNotice(typeof sent.data['error']==='string'?sent.data['error']:'Please review this choice.');}else setNotice('Saved offline. Your choice will send when connected.');}catch{setNotice('Saved offline. Your choice will send when connected.');}
-  },[session,pairToken,careDate,minute,api,unpair]);
-  const nextRoutineStep=useCallback(async()=>{if(!routine||routine.progress>=routine.steps.length)return;const step=routine.progress+1;const entry={id:routine.id,step,key:crypto.randomUUID(),date:careDate||todayKey()};setRoutines(old=>old.map(r=>r.id===routine.id?{...r,progress:step}:r));if(!pairToken){setNotice('Saved on this phone only. Pair with your family to send steps.');return;}try{routineQueue.current=appendRoutineStep(routineQueue.current,entry);localStorage.setItem(ROUTINE_KEY,JSON.stringify(routineQueue.current));}catch{setNotice('Could not safely save this step. Reconnect before continuing.');return;}try{const result=await api('support',pairToken,{op:'routine-step',id:entry.id,date:entry.date,step:entry.step,key:entry.key});if(result.status!==200)throw new Error();routineQueue.current=routineQueue.current.filter(s=>s.key!==entry.key);localStorage.setItem(ROUTINE_KEY,JSON.stringify(routineQueue.current));setNotice('Routine step reached the family schedule.');}catch{setNotice('Routine step saved offline. It will send when connected.');}},[routine,pairToken,careDate,api]);
+  },[session,pairToken,careDate,minute,api,unpair,supportDisplay,routine,recording]);
+  const nextRoutineStep=useCallback(async()=>{if(!routine||routine.progress>=routine.steps.length)return;const step=routine.progress+1;const entry={id:routine.id,step,key:crypto.randomUUID(),date:careDate||todayKey()};if(pairToken){try{const queued=appendRoutineStep(routineQueue.current,entry);localStorage.setItem(ROUTINE_KEY,JSON.stringify(queued));routineQueue.current=queued;}catch{setNotice('Could not safely save this step. Reconnect before continuing.');return;}}setRoutines(old=>{const next=old.map(r=>r.id===routine.id?{...r,progress:step}:r);try{const support=JSON.parse(localStorage.getItem(SUPPORT_KEY)??'{}');localStorage.setItem(SUPPORT_KEY,JSON.stringify({...support,routines:next}));}catch{}return next;});if(!pairToken){setNotice('Saved on this phone only. Pair with your family to send steps.');return;}try{const result=await api('support',pairToken,{op:'routine-step',id:entry.id,date:entry.date,step:entry.step,key:entry.key});if(result.status!==200)throw new Error();routineQueue.current=routineQueue.current.filter(s=>s.key!==entry.key);localStorage.setItem(ROUTINE_KEY,JSON.stringify(routineQueue.current));setNotice('Routine step reached the family schedule.');}catch{if(pairedRef.current===pairToken)setNotice('Routine step saved offline. It will send when connected.');}},[routine,pairToken,careDate,api]);
 
   const stopRecording = useCallback(() => {
     audioRevision.current += 1;
@@ -254,6 +270,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
       return;
     }
     stopRecording();
+    if(supportDisplay&&['tap','menu-done','menu-later','menu-help','menu-decline','menu-repeat'].includes(gesture)){setSupportDisplay(null);return;}
     if(gesture==='menu-routine'){setSupportDisplay(null);setRoutineId(routines.find(r=>r.enabled)?.id??'');return;}
     if((gesture==='tap'||gesture==='menu-done')&&routine){void nextRoutineStep();return;}
     if(gesture==='menu-later'||gesture==='menu-help'||gesture==='menu-decline'||gesture==='menu-repeat'){void perform(gesture==='menu-later'?'later':gesture==='menu-help'?'help':gesture==='menu-decline'?'decline':'repeat');return;}
@@ -297,7 +314,7 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
               const { status, data } = await api('pair', null, { code: pairCode.trim() });
               if (status !== 200 || typeof data['token'] !== 'string') { setNotice(typeof data['error'] === 'string' ? data['error'] : 'Pairing failed.'); return; }
               try { localStorage.setItem(PAIR_KEY, data['token']); } catch { /* keep for this session */ }
-              setPairCode(''); setPairToken(data['token']); setNotice('Paired with the family. Reminders now come from Telegram.');
+              pairingRevision.current++;pairedRef.current=data['token'];setSupportDisplay(null);setMedia({});setQuestion('');setRoutineId('');setCareDate('');setNotes([]);setRoutines([]);setSession(emptySession());setPairCode(''); setPairToken(data['token']); setNotice('Paired with the family. Reminders now come from Telegram.');
             } catch { setNotice('No internet connection. Try again.'); }
           }}>
             <label className="flex flex-col gap-1 text-xs text-muted-foreground">{ui.pairInstruction}<input className="h-10 w-48 rounded-md border border-input bg-background px-3 text-lg tracking-widest text-foreground" aria-label={ui.pairingCode} dir="ltr" autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={11} value={pairCode} onChange={event => setPairCode(event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))} placeholder="ABCDE-FGHJK" /></label>
@@ -310,18 +327,18 @@ export function G2App({ logoUrl = '/favicon.png' }: { logoUrl?: string }) {
         {session.sample && <p className="mb-3 text-xs font-semibold text-primary">{ui.sampleSchedule}</p>}
         <p className="text-xs text-muted-foreground">{display.title}</p><p className="mt-2 break-words text-2xl leading-snug">{display.body}</p><p className="mt-3 text-sm text-primary">{display.footer}</p>
         <div className="mt-5 flex items-center gap-2">
-          <Button variant="outline" size="icon" title={ui.previousReminder} aria-label={ui.previousReminder} disabled={!session.reminders.length || !ready} onClick={() => { stopRecording(); setSession(old => applyG2Gesture(old, 'swipe-down', minute)); }}><ArrowUp /></Button>
-          <Button variant="outline" size="icon" title={ui.nextReminder} aria-label={ui.nextReminder} disabled={!session.reminders.length || !ready} onClick={() => { stopRecording(); setSession(old => applyG2Gesture(old, 'swipe-up', minute)); }}><ArrowDown /></Button>
-          <Button disabled={!selected || selected.status !== 'pending' || toMin(selected.time) > minute || !ready} onClick={() => { stopRecording(); void perform('done'); }}><Check />{g2Strings.actDone}</Button>
+          <Button variant="outline" size="icon" title={ui.previousReminder} aria-label={ui.previousReminder} disabled={!session.reminders.length || !ready} onClick={() => { stopRecording();setSupportDisplay(null);setRoutineId(''); setSession(old => applyG2Gesture(old, 'swipe-down', minute)); }}><ArrowUp /></Button>
+          <Button variant="outline" size="icon" title={ui.nextReminder} aria-label={ui.nextReminder} disabled={!session.reminders.length || !ready} onClick={() => { stopRecording();setSupportDisplay(null);setRoutineId(''); setSession(old => applyG2Gesture(old, 'swipe-up', minute)); }}><ArrowDown /></Button>
+          <Button disabled={Boolean(supportDisplay||routine||recording)||!selected || selected.status !== 'pending' || toMin(selected.time) > minute || !ready} onClick={() => { stopRecording(); void perform('done'); }}><Check />{g2Strings.actDone}</Button>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" disabled={!selected||selected.status==='done'} onClick={()=>void perform('later')}><Clock/>{g2Strings.actLater}</Button><Button variant="outline" disabled={!selected||selected.status==='done'} onClick={()=>void perform('help')}><HandHeart/>{g2Strings.actHelp}</Button><Button variant="ghost" disabled={!selected||selected.status==='done'} onClick={()=>void perform('decline')}>{g2Strings.actNotToday}</Button><Button variant="ghost" title={g2Strings.actShowAgain} aria-label={g2Strings.actShowAgain} size="icon" onClick={()=>void perform('repeat')}><RotateCcw/></Button></div>
+        <div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" disabled={Boolean(supportDisplay||routine||recording)||!selected||selected.status==='done'} onClick={()=>void perform('later')}><Clock/>{g2Strings.actLater}</Button><Button variant="outline" disabled={Boolean(supportDisplay||routine||recording)||!selected||selected.status==='done'} onClick={()=>void perform('help')}><HandHeart/>{g2Strings.actHelp}</Button><Button variant="ghost" disabled={Boolean(supportDisplay||routine||recording)||!selected||selected.status==='done'} onClick={()=>void perform('decline')}>{g2Strings.actNotToday}</Button><Button variant="ghost" title={g2Strings.actShowAgain} aria-label={g2Strings.actShowAgain} size="icon" onClick={()=>void perform('repeat')}><RotateCcw/></Button></div>
         {hub.battery!==null&&<p className="mt-3 text-xs text-muted-foreground">Reported G2 battery: {hub.battery}%{hub.battery<=20?' · Plan a charging break.':''}</p>}
-        {pairToken&&<section className="mt-6 border-t border-border pt-5" aria-label="Family routines and reassurance"><h2 className="font-semibold">{g2Strings.navRoutines}</h2><div className="mt-3 flex flex-wrap gap-2">{routines.filter(r=>r.enabled).map(r=><Button key={r.id} variant="outline" onClick={()=>{setSupportDisplay(null);setRoutineId(r.id);}}>{r.title}</Button>)}</div>{routine&&<Button className="mt-3" onClick={()=>void nextRoutineStep()} disabled={routine.progress>=routine.steps.length}>{g2Strings.actNextStep}</Button>}<h2 className="mt-5 font-semibold">{g2Strings.familiarSection}</h2><div className="mt-3 flex flex-wrap gap-2">{notes.map(n=><Button key={n.id} variant="outline" onClick={()=>{setRoutineId('');setSupportDisplay(n.category==='object'?fill(ui.usually,{answer:n.answer}):n.answer);}}>{n.label}</Button>)}</div><form className="mt-4 flex flex-wrap gap-2" onSubmit={async e=>{e.preventDefault();const result=await api('support',pairToken,{op:'question',question});if(typeof result.data['text']==='string'){setRoutineId('');setSupportDisplay(result.data['text']);}}}><input className="min-w-0 flex-1 basis-48 rounded-md border border-input bg-background px-3 py-2" aria-label={g2Strings.askSection} value={question} onChange={e=>setQuestion(e.target.value)} maxLength={500} placeholder={g2Strings.askPlaceholder} required/><Button type="submit">{g2Strings.askSection}</Button></form>{notes.filter(n=>n.phone||n.media_path).map(n=><div key={n.id} className="mt-3">{n.phone&&<Button asChild variant="outline"><a href={`tel:${n.phone}`}><Phone/>{fill(g2Strings.callPerson,{name:n.label})}</a></Button>}{n.media_path&&!media[n.id]&&<Button variant="outline" onClick={async()=>{const result=await api('support',pairToken,{op:'media-read',noteId:n.id});if(typeof result.data['url']==='string')setMedia(old=>({...old,[n.id]:String(result.data['url'])}));}}>{fill(ui.openMedia,{name:n.label,kind:n.media_kind==='photo'?ui.photo:ui.recording})}</Button>}{media[n.id]&&(n.media_kind==='photo'?<img src={media[n.id]} alt={`Approved family photo for ${n.label}`} className="mt-3 max-h-64 rounded-lg object-contain"/>:<audio className="mt-3 w-full" controls src={media[n.id]}/>)}</div>)}</section>}
+        {pairToken&&<section className="mt-6 border-t border-border pt-5" aria-label="Family routines and reassurance"><h2 className="font-semibold">{g2Strings.navRoutines}</h2><div className="mt-3 flex flex-wrap gap-2">{routines.filter(r=>r.enabled).map(r=><Button key={r.id} variant="outline" onClick={()=>{setSupportDisplay(null);setRoutineId(r.id);}}>{r.title}</Button>)}</div>{routine&&<Button className="mt-3" onClick={()=>void nextRoutineStep()} disabled={routine.progress>=routine.steps.length}>{g2Strings.actNextStep}</Button>}<h2 className="mt-5 font-semibold">{g2Strings.familiarSection}</h2><div className="mt-3 flex flex-wrap gap-2">{notes.map(n=><Button key={n.id} variant="outline" onClick={()=>{setRoutineId('');setSupportDisplay(n.category==='object'?fill(ui.usually,{answer:n.answer}):n.answer);}}>{n.label}</Button>)}</div><form className="mt-4 flex flex-wrap gap-2" onSubmit={async e=>{e.preventDefault();try{const result=await api('support',pairToken,{op:'question',question});if(result.status===200&&typeof result.data['text']==='string'){setRoutineId('');setSupportDisplay(result.data['text']);}}catch{if(pairedRef.current===pairToken)setNotice('The family answer is unavailable. Please reconnect.');}}}><input className="min-w-0 flex-1 basis-48 rounded-md border border-input bg-background px-3 py-2" aria-label={g2Strings.askSection} value={question} onChange={e=>setQuestion(e.target.value)} maxLength={500} placeholder={g2Strings.askPlaceholder} required/><Button type="submit">{g2Strings.askSection}</Button></form>{notes.filter(n=>n.phone||n.media_path).map(n=><div key={n.id} className="mt-3">{n.phone&&<Button asChild variant="outline"><a href={`tel:${n.phone}`}><Phone/>{fill(g2Strings.callPerson,{name:n.label})}</a></Button>}{n.media_path&&!media[n.id]&&<Button variant="outline" onClick={async()=>{try{const result=await api('support',pairToken,{op:'media-read',noteId:n.id});if(result.status===200&&typeof result.data['url']==='string')setMedia(old=>({...old,[n.id]:String(result.data['url'])}));}catch{if(pairedRef.current===pairToken)setNotice('Private media is unavailable. Please reconnect.');}}}>{fill(ui.openMedia,{name:n.label,kind:n.media_kind==='photo'?ui.photo:ui.recording})}</Button>}{media[n.id]&&(n.media_kind==='photo'?<img src={media[n.id]} alt={`Approved family photo for ${n.label}`} className="mt-3 max-h-64 rounded-lg object-contain"/>:<audio className="mt-3 w-full" controls src={media[n.id]}/>)}</div>)}</section>}
       </section>
       <section className="border-b border-border py-6" aria-label="Saved reminders">
         <h2 className="mb-4 font-semibold">{session.sample ? ui.sampleSchedule : ui.yourReminders} <span className="text-muted-foreground">{session.reminders.length}/50</span></h2>
         <ul className="divide-y divide-border">
-          {session.reminders.map((row, index) => <li key={row.id} className="flex items-center gap-3 py-3"><Button variant="ghost" className="h-auto min-w-0 flex-1 justify-start whitespace-normal text-left" onClick={() => { stopRecording(); setSession(old => ({ ...old, selected: index })); }}><span className="shrink-0 text-muted-foreground">{row.time}</span><span className="min-w-0 break-words">{sampleText(row)}</span>{row.status === 'done' && <Check className="shrink-0 text-primary" />}</Button><Button variant="ghost" size="icon" aria-label={`${ui.deleteReminder}: ${sampleText(row)}`} title={ui.deleteReminder} disabled={Boolean(pairToken)} onClick={() => { stopRecording(); setSession(old => ({ ...old, selected: 0, reminders: old.reminders.filter(item => item.id !== row.id) })); }}><Trash2 /></Button></li>)}
+          {session.reminders.map((row, index) => <li key={row.id} className="flex items-center gap-3 py-3"><Button variant="ghost" className="h-auto min-w-0 flex-1 justify-start whitespace-normal text-left" onClick={() => { stopRecording();setSupportDisplay(null);setRoutineId(''); setSession(old => ({ ...old, selected: index })); }}><span className="shrink-0 text-muted-foreground">{row.time}</span><span className="min-w-0 break-words">{sampleText(row)}</span>{row.status === 'done' && <Check className="shrink-0 text-primary" />}</Button><Button variant="ghost" size="icon" aria-label={`${ui.deleteReminder}: ${sampleText(row)}`} title={ui.deleteReminder} disabled={Boolean(pairToken)} onClick={() => { stopRecording(); setSession(old => ({ ...old, selected: 0, reminders: old.reminders.filter(item => item.id !== row.id) })); }}><Trash2 /></Button></li>)}
         </ul>
         <form className="mt-4 flex flex-wrap gap-2" onSubmit={event => {
           event.preventDefault();

@@ -78,6 +78,18 @@ describe("native G2 bridge wiring (mocked hardware)", () => {
     expect(native.bridge.startAppLocationUpdates).toHaveBeenCalled();
     unmount();
   });
+  it('keeps sensors off when an older enable finishes after consent is withdrawn',async()=>{
+    let finishStart:(value:boolean)=>void=()=>{};
+    native.bridge.startAppLocationUpdates.mockImplementationOnce(()=>new Promise(resolve=>{finishStart=resolve;}));
+    const {result,unmount}=renderHook(()=>useEvenHub({display,onGesture:vi.fn(),autoSensors:false}));
+    await act(async()=>{await result.current.connect();});
+    let start:Promise<void>=Promise.resolve();
+    await act(async()=>{start=result.current.setSensors(true);await Promise.resolve();await Promise.resolve();});
+    let stop:Promise<void>=Promise.resolve();act(()=>{stop=result.current.setSensors(false);});
+    await act(async()=>{finishStart(true);await start;await stop;});
+    expect(result.current.sensorsActive).toBe(false);
+    expect(native.bridge.stopAppLocationUpdates).toHaveBeenCalled();unmount();
+  });
   it('uses Even App local storage for the installed schedule', async () => {
     const { result, unmount } = renderHook(() => useEvenHub({ display, onGesture: vi.fn(), autoSensors: false }));
     await act(async () => { await result.current.connect(); });
