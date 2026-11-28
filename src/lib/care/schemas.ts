@@ -16,7 +16,7 @@ export const requestSchema = z.discriminatedUnion('op', [
   z.object({op:z.literal('reminder'), id:z.string().uuid().optional(), title:z.string().trim().min(1).max(160),detail:z.string().max(300),local_time:time,critical:z.boolean(),snooze_minutes:z.number().int().min(0).max(120),date_override:date,lead_minutes:z.number().int().min(0).max(180).default(0)}),
   z.object({op:z.literal('routine'),id:z.string().uuid().optional(),title:z.string().trim().min(1).max(100),local_time:time,steps:z.array(z.string().trim().min(1).max(160)).min(1).max(12),enabled:z.boolean(),date_override:date}),
   z.object({op:z.literal('routine-step'),id:z.string().uuid(),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),key:z.string().uuid(),step:z.number().int().min(0).max(12)}),
-  z.object({op:z.literal('note'),id:z.string().uuid().optional(),label:z.string().trim().min(1).max(80),answer:z.string().max(500),category:z.enum(['person','object','reassurance','message']),phone:z.string().max(30).regex(/^[+\d ()-]*$/)}),
+  z.object({op:z.literal('note'),id:z.string().uuid().optional(),label:z.string().trim().min(1).max(80),answer:z.string().max(500),category:z.enum(['person','object','reassurance','message']),phone:z.string().max(30).regex(/^[+\d ()-]*$/),recap_date:date.default(null)}),
   z.object({op:z.literal('delete'),entity:z.enum(['reminder','routine','note']),id:z.string().uuid()}),
   z.object({op:z.literal('settings'),display_name:z.string().trim().min(1).max(80),timezone:z.string().max(80),summary_time:time.or(z.literal('off')),preferences:preferencesSchema}),
   z.object({op:z.literal('ack'),id:z.string().uuid()}),

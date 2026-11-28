@@ -8,6 +8,7 @@ import {preferencesSchema,requestSchema,actionSchema} from './schemas';
 import {readingPreferences,effectiveTime,reminderOnDate,approvedAnswer} from './rules';
 import {careHash,type CareClient,type FamilyActor} from './auth.server';
 import {sendTelegramMessage} from '@/lib/g2-sync.server';
+import {validateFamilyFile} from './family-moments';
 export function preferences(raw:Json):CarePreferences{const parsed=preferencesSchema.safeParse({...defaultPreferences,...(raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{})});return readingPreferences(parsed.success?parsed.data:defaultPreferences);}
 function check(error:{message:string}|null){if(error)throw new Error('Could not save this change. Please try again.');}
 export async function loadCare(client:CareClient,circleId:string,member:CareWorkspace['member']):Promise<CareWorkspace>{
@@ -84,7 +85,10 @@ export async function careOperation(actor:FamilyActor,input:z.infer<typeof reque
     const at=new Date().toISOString();let values;
     if(input.op==='reminder')values={id,circle_id:circleId,title:input.title,detail:input.detail||null,local_time:input.local_time,critical:input.critical,snooze_minutes:input.snooze_minutes,date_override:input.date_override,lead_minutes:input.lead_minutes,updated_at:at};
     else if(input.op==='routine')values={id,circle_id:circleId,title:input.title,local_time:input.local_time,steps:input.steps,enabled:input.enabled,date_override:input.date_override,updated_at:at};
-    else values={id,circle_id:circleId,label:input.label,answer:input.answer,category:input.category,phone:input.phone,updated_at:at};
+    else {
+      if(input.recap_date && input.category!=='message')throw new Error('Only an approved positive family message can appear in the day recap.');
+      values={id,circle_id:circleId,label:input.label,answer:input.answer,category:input.category,phone:input.phone,recap_date:input.recap_date,updated_at:at};
+    }
     // The explicit branches retain generated database typing for different table shapes.
     if(input.op==='reminder'){const {error}=await client.from('reminders').upsert(values as DatabaseReminder);check(error);}
     if(input.op==='routine'){const {error}=await client.from('care_routines').upsert(values as DatabaseRoutine);check(error);}
@@ -161,7 +165,7 @@ export async function careOperation(actor:FamilyActor,input:z.infer<typeof reque
     if(input.op==='media-read'){if(!note.media_path)return {ok:true,url:null};const {data,error}=await client.storage.from('care-family-media').createSignedUrl(note.media_path,120);check(error);return {ok:true,url:data?.signedUrl??null};}
     if(input.op==='media-remove'){if(note.media_path)check((await client.storage.from('care-family-media').remove([note.media_path])).error);check((await client.from('care_notes').update({media_path:null,media_kind:null}).eq('id',note.id).eq('circle_id',circleId)).error);return {ok:true};}
     if((input.kind==='photo')!==input.mime.startsWith('image/'))throw new Error('Choose a matching photo or audio file.');
-    let bytes:Uint8Array;try{bytes=Uint8Array.from(atob(input.data),c=>c.charCodeAt(0));}catch{throw new Error('Invalid media file');}if(bytes.length>5*1024*1024||!bytes.length)throw new Error('Choose a file smaller than 5 MB.');
+    let bytes:Uint8Array;try{bytes=Uint8Array.from(atob(input.data),c=>c.charCodeAt(0));}catch{throw new Error('Invalid media file');}validateFamilyFile(bytes.length,input.mime);
     const path=`${circleId}/${note.id}/${crypto.randomUUID()}`;const {error}=await client.storage.from('care-family-media').upload(path,bytes,{contentType:input.mime,upsert:false});check(error);
     const {error:saved}=await client.from('care_notes').update({media_path:path,media_kind:input.kind}).eq('id',note.id).eq('circle_id',circleId);if(saved){await client.storage.from('care-family-media').remove([path]);check(saved);}
     if(note.media_path)await client.storage.from('care-family-media').remove([note.media_path]);return {ok:true};

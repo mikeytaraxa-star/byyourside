@@ -1,0 +1,2 @@
+ALTER TABLE public.care_notes ADD COLUMN recap_date date;
+COMMENT ON COLUMN public.care_notes.recap_date IS 'Explicit family approval to include this positive message or photo in the recap for this local calendar date; NULL excludes it.';

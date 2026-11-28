@@ -1,5 +1,11 @@
 # ByYourSide live integrations
 
+## Family voice and gentle recap
+
+- [x] Add consent-based short family recordings with preview, discard, private saving and phone-controlled playback.
+- [x] Add explicitly family-approved dated moments/photos to a calm, optional day recap without quizzes.
+- [x] Test private media access, recording cleanup, approval/date filtering and real isolated family-to-companion readback; test media and records removed. Physical phone microphone/browser acceptance remains outside this verification.
+
 ## Interface languages
 
 - [x] Audit all 16 language dictionaries, extend wearer/pairing/consent/native-menu translations, verify language switching and right-to-left layout, and document coverage limits in docs/localization.md. Family-authored care content is preserved; some family forms, server messages and public pages remain English, so this is not complete app localization.

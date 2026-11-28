@@ -1,0 +1,11 @@
+# Family voice and gentle day recap
+
+In **Family workspace → Familiar people**, create a family note first. An owner or editor can consent to sharing a recording, record up to 60 seconds on the phone, listen to the local preview, discard it, or explicitly save it privately. Supported photo and audio uploads are limited to 5 MB. A new upload replaces the note's previous media.
+
+In **Loved One view**, choose a familiar note and tap **Listen to…**. The phone's native audio controls handle playback. There is no autoplay, transcription, AI-generated voice, or claim that sound plays through the glasses. Microphone tracks are released after stopping, discarding, or leaving the recording screen; unsaved audio is not uploaded.
+
+For a recap, choose **Positive family message** and explicitly set **Approve for this day’s recap**. Optionally attach a photo. The companion's **A few moments from today** section shows up to five messages/photos approved for its family-local calendar date, one at a time, with Previous, Next and All done. Ordinary notes, other dates, unapproved notes and audio entries are excluded. No reminder confirmation is turned into a remembered event, and there are no quizzes or memory scores.
+
+Media stays in the existing private family storage. Viewing links expire after two minutes and are issued only after the family session and circle scope are checked. Viewers may listen/view but cannot upload, replace or approve family content. These additions use the existing phone companion, not the standalone G2 audio path.
+
+Verified with an isolated real family: phone microphone capture using Chromium's synthetic microphone, local preview, explicit private save, phone audio playback, private photo upload, approved-day readback and a narrow mobile layout. Test records and media were removed afterwards. Physical phone microphone/browser variations and G2 devices still need user acceptance testing. The new control labels are English; family-authored words are never translated.

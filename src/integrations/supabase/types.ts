@@ -289,6 +289,7 @@ export type Database = {
           media_kind: string | null
           media_path: string | null
           phone: string
+          recap_date: string | null
           updated_at: string
         }
         Insert: {
@@ -300,6 +301,7 @@ export type Database = {
           media_kind?: string | null
           media_path?: string | null
           phone?: string
+          recap_date?: string | null
           updated_at?: string
         }
         Update: {
@@ -311,6 +313,7 @@ export type Database = {
           media_kind?: string | null
           media_path?: string | null
           phone?: string
+          recap_date?: string | null
           updated_at?: string
         }
         Relationships: [

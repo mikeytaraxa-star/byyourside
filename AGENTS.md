@@ -53,3 +53,6 @@ use the editor.
 - Telegram Mini App identity uses freshness-checked production Ed25519 signatures; never trust unsigned launch identities or expose a bot token to validate them.
 - Family media belongs in the private care-family-media bucket with scoped short-lived viewing links; do not bundle it with public branding or the hardware package.
 - Keep interface translations in browser-safe typed catalogs; preserve family-authored care facts, use Unicode-aware unambiguous note matching, and serialize native language/menu changes through the display queue so language changes cannot alter gesture meanings or restore stale screens.
+
+- Family voice recording uses a separate consent-gated MediaRecorder hook with local preview and explicit private saving; companion playback uses native phone audio controls, never glasses audio or speech recognition.
+- Gentle recaps reuse positive family notes with an explicit local recap date; filter by that date and exclude audio so no event inference or reminder completion becomes a recalled moment.

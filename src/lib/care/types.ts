@@ -22,7 +22,7 @@ export type CareReminder = {
 };
 export type DeliveryOutcome = 'accepted' | 'failed';
 export type CareRoutine = { id: string; title: string; local_time: string; steps: string[]; enabled: boolean; date_override: string | null; progress: number };
-export type CareNote = { id: string; label: string; answer: string; category: 'person' | 'object' | 'reassurance' | 'message'; phone: string; media_path: string | null; media_kind: 'photo' | 'audio' | null; updated_at: string };
+export type CareNote = { id: string; label: string; answer: string; category: 'person' | 'object' | 'reassurance' | 'message'; phone: string; media_path: string | null; media_kind: 'photo' | 'audio' | null; updated_at: string; recap_date?: string | null };
 export type CareMember = { id: string; member_name: string; role: CareRole; direct_chat_id: number | null; notify_order: number; revoked_at: string | null };
 export type CareEvent = { id: string; reminder_id: string | null; kind: string; label: string; actor_name: string; created_at: string; acknowledged_by: string | null; delivery: string; delivery_detail?: Record<string, string> | null };
 export type CareHistory = { id: string; entity: string; entity_id: string; label: string; created_at: string; undone_at: string | null };
