@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { G2_REGIONS, fitG2Text, nativeDisplay } from './g2-display';
+import { G2_REGIONS, fitG2Text, nativeDisplay, g2TextWidth } from './g2-display';
 import { G2_MENU } from '@/components/demo/gestures';
 import { validateEvenHubPageContainer } from '@evenrealities/even_hub_sdk';
 describe('native display payload', () => {
@@ -16,6 +16,20 @@ describe('native display payload', () => {
     expect(result.split('\n')).toHaveLength(4);
     expect(result.endsWith('…')).toBe(true);
     expect(result.split('\n').every(line => line.length <= 22)).toBe(true);
+  });
+  it('does not split surrogate pairs, accented letters or Indic grapheme clusters', () => {
+    for (const glyph of ['👨‍👩‍👧', 'e\u0301', 'क्षि']) {
+      const result = fitG2Text(glyph.repeat(40), 8, 3);
+      const segments = Array.from(new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(result.replaceAll('\n',''))).map(v=>v.segment);
+      expect(segments.every(v=>v===glyph||v==='…')).toBe(true);
+      expect(result.split('\n').every(line=>g2TextWidth(line)<=8)).toBe(true);
+    }
+  });
+  it('budgets double-width East Asian glyphs instead of overflowing a native line', () => {
+    const result=fitG2Text('安娜的日常提醒'.repeat(20),22,4);
+    expect(result.split('\n')).toHaveLength(4);
+    expect(result.split('\n').every(line=>g2TextWidth(line)<=22)).toBe(true);
+    expect(result.endsWith('…')).toBe(true);
   });
   it('never loses the action footer when body is truncated', () => {
     const payload = nativeDisplay({ clock: '14:00', title: 'TODAY', body: 'Water '.repeat(200), footer: 'Tap = done' });

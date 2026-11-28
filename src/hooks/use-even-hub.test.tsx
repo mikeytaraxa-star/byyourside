@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeviceStatus, EvenHubEvent } from "@evenrealities/even_hub_sdk";
 import { useEvenHub } from "./use-even-hub";
+import { nativeMenuFor } from '@/lib/i18n-controls';
 
 const display = { clock: "14:00", title: "TODAY", body: "Blue pill" };
 const native = vi.hoisted(() => ({
@@ -9,6 +10,7 @@ const native = vi.hoisted(() => ({
   emitDevice: null as ((device: DeviceStatus) => void) | null,
   bridge: {
     createStartUpPageContainer: vi.fn(async () => 0),
+    rebuildPageContainer: vi.fn(async () => true),
     textContainerUpgrade: vi.fn(async () => true),
     onEvenHubEvent: vi.fn(),
     onAppLocationChanged: vi.fn(() => () => {}),
@@ -56,6 +58,15 @@ describe("G2 no-hardware showcase", () => {
 });
 
 describe("native G2 bridge wiring (mocked hardware)", () => {
+  it('updates menu language while preserving all nine gesture identifiers', async () => {
+    const {result,rerender,unmount}=renderHook(({language})=>useEvenHub({display:{...display,menuItems:nativeMenuFor(language)},onGesture:vi.fn(),autoSensors:false}),{initialProps:{language:'en'}});
+    await act(async()=>{await result.current.connect();});
+    await act(async()=>{rerender({language:'ar'});});
+    const call=native.bridge.rebuildPageContainer.mock.calls.at(-1) as unknown as [{menuObject:{menuItems:{itemID:number;itemName:string}[]}}] | undefined;
+    expect(call?.[0].menuObject.menuItems.map(item=>item.itemID)).toEqual([1,2,3,4,5,6,7,8,9]);
+    expect(call?.[0].menuObject.menuItems).toMatchObject(nativeMenuFor('ar'));
+    unmount();
+  });
   it('keeps hardware sensors off unless explicitly enabled', async () => {
     const { result, unmount } = renderHook(() => useEvenHub({ display, onGesture: vi.fn(), autoSensors: false }));
     await act(async () => { expect(await result.current.connect()).toBe(true); });

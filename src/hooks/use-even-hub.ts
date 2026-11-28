@@ -6,7 +6,7 @@ import { G2_REGIONS, nativeDisplay } from "@/lib/g2-display";
 
 export type G2Status = "idle" | "connecting" | "connected" | "simulated" | "error";
 export type MotionSample = { x: number; y: number; z: number };
-export type G2Display = { clock: string; title: string; body: string; footer?: string | undefined };
+export type G2Display = { clock: string; title: string; body: string; footer?: string | undefined; menuItems?: { itemID: number; itemName: string }[] };
 
 export function useEvenHub({ display, onGesture, autoSensors = true }: { display: G2Display; onGesture: (gesture: Gesture, source: GestureSource) => void; autoSensors?: boolean }) {
   const [status, setStatus] = useState<G2Status>("idle");
@@ -85,10 +85,12 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
       if (revision !== connectionRevision.current) return false;
       bridgeRef.current = bridge;
       const initial = nativeDisplay(displayRef.current);
+      let menuItems = displayRef.current.menuItems ?? G2_MENU;
+      let menuSignature = JSON.stringify(menuItems);
       const result = await bridge.createStartUpPageContainer(
         new sdk.CreateStartUpPageContainer({
           containerTotalNum: 3,
-          menuObject: new sdk.MenuContainerProperty({ menuItems: G2_MENU.map((item) => new sdk.MenuItemProperty(item)) }),
+          menuObject: new sdk.MenuContainerProperty({ menuItems: menuItems.map((item) => new sdk.MenuItemProperty(item)) }),
           textObject: (Object.keys(G2_REGIONS) as Array<keyof typeof G2_REGIONS>).map((key) =>
             new sdk.TextContainerProperty({ ...G2_REGIONS[key], content: initial[key], textColor: 4 }),
           ),
@@ -103,6 +105,20 @@ export function useEvenHub({ display, onGesture, autoSensors = true }: { display
         throw new Error(`G2 page creation failed (${result})`);
       updatesRef.current = latestUpdateQueue<G2Display>(async (current) => {
         const next = nativeDisplay(current);
+        menuItems = current.menuItems ?? G2_MENU;
+        const signature = JSON.stringify(menuItems);
+        if (signature !== menuSignature) {
+          if (bridgeRef.current !== bridge) return;
+          const rebuilt = await bridge.rebuildPageContainer(new sdk.RebuildPageContainer({
+            containerTotalNum: 3,
+            menuObject: new sdk.MenuContainerProperty({ menuItems: menuItems.map(item => new sdk.MenuItemProperty(item)) }),
+            textObject: (Object.keys(G2_REGIONS) as Array<keyof typeof G2_REGIONS>).map(key =>
+              new sdk.TextContainerProperty({ ...G2_REGIONS[key], content: next[key], textColor: 4 })),
+          }));
+          if (!rebuilt) throw new Error('G2 rejected a language update');
+          menuSignature = signature;
+          return;
+        }
         for (const key of Object.keys(G2_REGIONS) as Array<keyof typeof G2_REGIONS>) {
           if (bridgeRef.current !== bridge) return;
           const region = G2_REGIONS[key];

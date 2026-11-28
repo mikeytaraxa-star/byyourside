@@ -135,7 +135,7 @@ export async function careOperation(actor:FamilyActor,input:z.infer<typeof reque
   if(input.op==='question'){
     const workspace=await loadCare(client,circleId,{id:member.id,role:member.role as 'owner'|'editor'|'viewer',member_name:member.member_name});
     const hasCocoon=workspace.capabilities.cocoon;
-    if(!hasCocoon)return {ok:true,mode:input.draft?'draft':'approved-notes',text:input.draft?input.question.slice(0,160):approvedAnswer(input.question,workspace.notes),requiresApproval:input.draft};
+    if(!hasCocoon)return {ok:true,mode:input.draft?'draft':'approved-notes',text:input.draft?input.question.slice(0,160):approvedAnswer(input.question,workspace.notes,workspace.circle.preferences.language),requiresApproval:input.draft};
     const {askCocoon}=await import('@/lib/cocoon.server');const context=JSON.stringify({notes:workspace.notes.map(n=>({label:n.label,answer:n.answer})),reminders:workspace.reminders.map(r=>({title:r.title,time:r.effective_time,state:r.state}))});
     const result=await askCocoon({baseUrl:process.env['COCOON_BASE_URL'],apiKey:process.env['COCOON_API_KEY'],model:process.env['COCOON_MODEL'],question:input.draft?`Draft a clearer short reminder, without adding facts or changing dosage/timing: ${input.question}`:input.question,context});
     return {ok:true,...result,requiresApproval:input.draft};

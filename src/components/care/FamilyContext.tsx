@@ -31,7 +31,7 @@ function LiveSession({token,logout,children}:{token:string;logout:()=>void;child
   useEffect(()=>{const reconnect=()=>void qc.invalidateQueries({queryKey:query.queryKey});window.addEventListener('online',reconnect);return()=>window.removeEventListener('online',reconnect);},[token,qc]);
   const operate=async(body:Record<string,unknown>)=>{setBusy(true);setNotice('');try{
     if(!navigator.onLine&&(body['op']==='action'||body['op']==='routine-step')){const queue=readQueue();if(queue.length>=100)throw new Error('Reconnect before saving more choices.');saveQueue([...queue,body]);qc.setQueryData(query.queryKey,(old:CareWorkspace|undefined)=>{if(!old)return old;const next=structuredClone(old);if(body['op']==='action'){const r=next.reminders.find(r=>r.id===body['reminderId']);if(r)r.state=actionState(body['action'] as CareAction,r.state);}else{const r=next.routines.find(r=>r.id===body['id']);if(r)r.progress=Number(body['step']);}return next;});setOffline(true);setNotice('Saved offline. Your choice will send when connected.');return {ok:true,pending:true};}
-    if(!navigator.onLine&&body['op']==='question')return {ok:true,text:approvedAnswer(String(body['question']),data.notes),mode:'Saved approved family notes'};
+    if(!navigator.onLine&&body['op']==='question')return {ok:true,text:approvedAnswer(String(body['question']),data.notes,data.circle.preferences.language),mode:'Saved approved family notes'};
     const d=await callCare(token,body);if(body['op']!=='media-read'&&body['op']!=='question'&&body['op']!=='export')await qc.invalidateQueries({queryKey:query.queryKey});setNotice(d.erased?'Family care data removed.':'');if(d.erased)logout();return d;
   }catch(e){const text=e instanceof Error?e.message:'Could not save';setNotice(text);throw e;}finally{setBusy(false);}};
   return <Context.Provider value={{data,demo:false,busy,notice:offline?`Offline · showing saved care information · ${readQueue().length} choices waiting. ${notice}`:notice,operate,logout}}>{children}</Context.Provider>;
@@ -59,7 +59,7 @@ function DemoSession({logout,children}:{logout:()=>void;children:ReactNode}){
     }
     if(op==='delete'){if(body['entity']==='reminder')next.reminders=next.reminders.filter(x=>x.id!==body['id']);if(body['entity']==='routine')next.routines=next.routines.filter(x=>x.id!==body['id']);if(body['entity']==='note')next.notes=next.notes.filter(x=>x.id!==body['id']);}
     if(op==='routine-step'){const routine=next.routines.find(r=>r.id===body['id']);if(routine)routine.progress=Number(body['step']);}
-    if(op==='question')return {ok:true,text:body['draft']?String(body['question']).slice(0,160):approvedAnswer(String(body['question']),next.notes),mode:body['draft']?'Draft · not AI':'Approved family notes',requiresApproval:Boolean(body['draft'])};
+    if(op==='question')return {ok:true,text:body['draft']?String(body['question']).slice(0,160):approvedAnswer(String(body['question']),next.notes,next.circle.preferences.language),mode:body['draft']?'Draft · not AI':'Approved family notes',requiresApproval:Boolean(body['draft'])};
     if(op==='test-alert')return {ok:true,telegram:'simulation — not sent',email:'simulation — not sent'};
     if(op==='invite')return {ok:true,code:'SAMPLE ONLY',instruction:'Live invitations require private family access.'};
     if(op==='export')return {ok:true,export:next};

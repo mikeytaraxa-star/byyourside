@@ -1,5 +1,7 @@
 import { toMin, fmt } from '@/components/demo/engine';
 import { isLanguage } from '@/lib/i18n';
+import { controlsFor } from '@/lib/i18n-controls';
+import { fill } from '@/lib/i18n';
 import { defaultPreferences, type CareAction, type CarePreferences, type CareReminder, type CareState } from './types';
 
 export function actionState(action: CareAction, previous: CareState): CareState {
@@ -46,10 +48,21 @@ export function deliverySummary(detail: Record<string, string>, members: { direc
   if (!missed.length) return `Reached ${reached.length} of ${entries.length}: ${reached.join(', ')}`;
   return `Reached ${reached.length} of ${entries.length}${reached.length ? `: ${reached.join(', ')}` : ''}. Not reached: ${missed.join(', ')}`;
 }
-export function approvedAnswer(question: string, notes: { label: string; answer: string; category: string }[]) {
-  const lower = question.toLowerCase().replace(/[^a-z0-9 ]/g, '');
-  const match = notes.find(n => lower.includes(n.label.toLowerCase().replace(/[^a-z0-9 ]/g, '')));
-  return match ? (match.category === 'object' ? `Usually: ${match.answer}` : match.answer) : 'Your family has not added that yet. You can ask someone familiar for help.';
+export function approvedAnswer(question: string, notes: { label: string; answer: string; category: string }[], language: unknown = 'en') {
+  const normalize = (value: string) => value.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ').trim();
+  const lower = normalize(question);
+  const matches = notes.filter(n => {
+    const label = normalize(n.label);
+    if (!label || !lower) return false;
+    // Space-free East Asian writing uses substring matching; other scripts require whole
+    // names, so "Anna" cannot accidentally select "Joanna". Never match an empty label.
+    return /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(label)
+      ? lower.includes(label)
+      : ` ${lower} `.includes(` ${label} `);
+  });
+  const t = controlsFor(language);
+  const match = matches.length === 1 ? matches[0] : undefined;
+  return match ? (match.category === 'object' ? fill(t.usually, { answer: match.answer }) : match.answer) : t.unknownAnswer;
 }
 export function validatePrompt(title: string, detail: string, existingTimes: string[], time: string) {
   const warnings: string[] = [];

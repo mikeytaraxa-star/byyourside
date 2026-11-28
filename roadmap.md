@@ -2,6 +2,8 @@
 
 ## Interface languages
 
+- [x] Audit all 16 language dictionaries, extend wearer/pairing/consent/native-menu translations, verify language switching and right-to-left layout, and document coverage limits in docs/localization.md. Family-authored care content is preserved; some family forms, server messages and public pages remain English, so this is not complete app localization.
+- [ ] Obtain native-speaker and physical G2 language acceptance — blocked by unavailable reviewers and hardware; automated/browser checks cannot certify error-free clinical wording or device glyph rendering.
 - [x] Add interface languages beyond English: German, Spanish, French plus the most widely spoken languages (user asked to "add all popular languages"). Covers glasses prompts, the Loved One view and family workspace navigation; family-written greetings, reminders and notes stay in the family's own words. Shipped: 16 languages (English, German, Spanish, French, Italian, Portuguese, Dutch, Polish, Ukrainian, Russian, Turkish, Arabic with right-to-left layout, Hindi, Chinese, Japanese, Korean), chosen in the family workspace settings and on the glasses companion screen. Translations other than English are machine-assisted and have not been reviewed by native speakers.
 
 ## Everyday companion upgrade

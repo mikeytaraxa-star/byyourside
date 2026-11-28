@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DICTIONARIES, fill, isLanguage, LANGUAGES, LANGUAGE_NAMES, stringsFor, textDirection, type Strings } from './i18n';
+import { controlsFor } from './i18n-controls';
+import { g2TextWidth } from './g2-display';
 
 const keys = Object.keys(DICTIONARIES.en) as (keyof Strings)[];
 
@@ -13,6 +15,22 @@ describe('interface languages', () => {
       const dictionary = DICTIONARIES[code];
       expect(Object.keys(dictionary).sort()).toEqual([...keys].sort());
       for (const key of keys) expect(dictionary[key].trim().length).toBeGreaterThan(0);
+    }
+  });
+  it.each(LANGUAGES)('preserves interpolation parameters for every %s message', code => {
+    const placeholders=(text:string)=>[...text.matchAll(/\{(\w+)\}/g)].map(m=>m[1]).sort();
+    for(const key of keys) expect(placeholders(DICTIONARIES[code][key])).toEqual(placeholders(DICTIONARIES.en[key]));
+    const controls=controlsFor(code);
+    for(const key of Object.keys(controls) as (keyof typeof controls)[]){
+      expect(controls[key].trim().length).toBeGreaterThan(0);
+      expect(placeholders(controls[key])).toEqual(placeholders(controlsFor('en')[key]));
+      expect(fill(controls[key],{answer:'Family text',name:'Anna',kind:'photo',step:2,total:3})).not.toMatch(/\{\w+\}/);
+    }
+  });
+  it.each(LANGUAGES)('keeps %s native commands intact inside the fixed action region', code => {
+    const t=DICTIONARIES[code];
+    for(const command of [t.g2TapDone,t.g2TapNext,t.g2DoubleTapToday,t.g2Release,t.g2NotDue,t.g2HelpRequested,t.g2ALittleLater,t.stateDone,t.stateDeclined]) {
+      expect(g2TextWidth(command)).toBeLessThanOrEqual(22);
     }
   });
   it('names each language in its own script', () => {
