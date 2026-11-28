@@ -9,7 +9,7 @@ import { browseIndex, type Gesture, type GestureSource } from "@/components/demo
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import logo from "@/assets/byyourside_heart_hand_logo.svg.asset.json";
-import shareImage from "@/assets/byyourside_share.png.asset.json";
+import shareImage from "@/assets/byyourside-minimal-cover.jpg.asset.json";
 import { getRequestOrigin } from "@/lib/origin.functions";
 import { dailySummary } from "@/lib/reminder-alerts";
 import {
@@ -42,6 +42,9 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
       ...(loaderData ? [
         { property: "og:image", content: `${loaderData.origin}${shareImage.url}` },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
+        { property: "og:image:alt", content: "ByYourSide heart-in-hand logo. A little reminder. Someone by your side." },
         { name: "twitter:image", content: `${loaderData.origin}${shareImage.url}` },
       ] : []),
     ],

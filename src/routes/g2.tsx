@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { G2App } from '@/components/g2/G2App';
-import shareImage from '@/assets/byyourside_share.png.asset.json';
+import shareImage from '@/assets/byyourside-minimal-cover.jpg.asset.json';
 import { getRequestOrigin } from '@/lib/origin.functions';
 export const Route = createFileRoute('/g2')({
   loader: async () => ({ origin: await getRequestOrigin() }),
@@ -13,6 +13,9 @@ export const Route = createFileRoute('/g2')({
     { name: 'twitter:card', content: 'summary_large_image' },
     ...(loaderData ? [
       { property: 'og:image', content: `${loaderData.origin}${shareImage.url}` },
+      { property: 'og:image:width', content: '1200' },
+      { property: 'og:image:height', content: '630' },
+      { property: 'og:image:alt', content: 'ByYourSide heart-in-hand logo. A little reminder. Someone by your side.' },
       { name: 'twitter:image', content: `${loaderData.origin}${shareImage.url}` },
     ] : []),
   ] }),
