@@ -100,3 +100,25 @@ export function parseDone(text: string): { time: string | null } | null {
   if (!m) return null;
   return { time: m[1] ? `${m[1].padStart(2, '0')}:${m[2]}` : null };
 }
+
+/** How long a bundled family update waits so a burst of routine taps becomes one message. */
+export const DIGEST_AFTER_MINUTES = 10;
+export const GROUPABLE_KINDS = ['done', 'later', 'decline', 'repeat', 'routine-step'] as const;
+const digestWord: Record<string, string> = { done: 'Confirmed', later: 'A little later', decline: 'Not today', repeat: 'Shown again', 'routine-step': 'Routine step' };
+const digestSymbol: Record<string, string> = { done: '✅', later: '⏳', decline: '✖️', repeat: '🔁', 'routine-step': '✓' };
+
+/** One calm digest of routine confirmations. Important alerts never wait for this. */
+export function digestText(events: { kind: string; label: string; created_at: string }[], date: string) {
+  const line = (e: { kind: string; label: string; created_at: string }) => {
+    const at = new Date(e.created_at);
+    const clock = Number.isFinite(at.getTime()) ? at.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+    return `${digestSymbol[e.kind] ?? '•'} ${clock} ${(digestWord[e.kind] ?? 'Update').slice(0, 20)} · ${e.label.slice(0, 60)}`;
+  };
+  return [
+    `📋 ByYourSide · Family updates · ${date}`,
+    '',
+    ...events.map(line),
+    '',
+    'Routine confirmations are bundled so your family chat stays calm. Important alerts still arrive immediately.',
+  ].join('\n');
+}

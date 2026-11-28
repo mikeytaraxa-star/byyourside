@@ -86,7 +86,9 @@ export type Database = {
           circle_id: string
           created_at: string
           delivery: string
+          delivery_detail: Json
           escalated_at: string | null
+          grouped_at: string | null
           id: string
           idempotency_key: string
           kind: string
@@ -99,7 +101,9 @@ export type Database = {
           circle_id: string
           created_at?: string
           delivery?: string
+          delivery_detail?: Json
           escalated_at?: string | null
+          grouped_at?: string | null
           id?: string
           idempotency_key: string
           kind: string
@@ -112,7 +116,9 @@ export type Database = {
           circle_id?: string
           created_at?: string
           delivery?: string
+          delivery_detail?: Json
           escalated_at?: string | null
+          grouped_at?: string | null
           id?: string
           idempotency_key?: string
           kind?: string
@@ -562,6 +568,7 @@ export type Database = {
           detail: string | null
           id: string
           last_missed_on: string | null
+          lead_minutes: number
           local_time: string
           missed_streak: number
           nudged_on: string | null
@@ -582,6 +589,7 @@ export type Database = {
           detail?: string | null
           id?: string
           last_missed_on?: string | null
+          lead_minutes?: number
           local_time: string
           missed_streak?: number
           nudged_on?: string | null
@@ -602,6 +610,7 @@ export type Database = {
           detail?: string | null
           id?: string
           last_missed_on?: string | null
+          lead_minutes?: number
           local_time?: string
           missed_streak?: number
           nudged_on?: string | null

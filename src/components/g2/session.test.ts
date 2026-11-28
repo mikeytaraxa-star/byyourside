@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyG2Gesture, restoreSession, type G2Session } from './session';
+import { applyG2Gesture, prepMinutesLeft, restoreSession, type G2Session } from './session';
 const session: G2Session = { date: '2026-11-23', selected: 0, sample: false, reminders: [
   { id: 'water', time: '14:00', text: 'Drink water', status: 'pending' },
   { id: 'walk', time: '15:00', text: 'Walk with Anna', status: 'pending' },
@@ -51,4 +51,12 @@ describe('catch-up on opening', () => {
   ] };
   it('opens on the earliest missed reminder first', () => { expect(_open(s, 12 * 60 + 5).selected).toBe(1); });
   it('counts reminders 15+ minutes overdue as missed', () => { expect(_missed(s, 9 * 60 + 15).map(r => r.id)).toEqual(['b']); expect(_missed(s, 9 * 60 + 14)).toEqual([]); });
+  it('shows a heads-up only while the reminder is still ahead', () => {
+    const withLead = { id: 'b', time: '09:00', text: 'Water', status: 'pending' as const, leadMinutes: 10 };
+    expect(prepMinutesLeft(withLead, 8 * 60 + 52)).toBe(8);
+    expect(prepMinutesLeft(withLead, 8 * 60 + 49)).toBeNull();
+    expect(prepMinutesLeft(withLead, 9 * 60)).toBeNull();
+    expect(prepMinutesLeft({ ...withLead, status: 'done' as const }, 8 * 60 + 52)).toBeNull();
+    expect(prepMinutesLeft({ id: 'c', time: '09:00', text: 'Lunch', status: 'pending' as const }, 8 * 60 + 52)).toBeNull();
+  });
 });

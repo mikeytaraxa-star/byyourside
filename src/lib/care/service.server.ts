@@ -3,7 +3,7 @@ import type {Json} from '@/integrations/supabase/types';
 import {localClock,isValidTimeZone} from '@/lib/reminder-alerts';
 import {toMin} from '@/components/demo/engine';
 import {newPairCode,formatPairCode} from '@/lib/pairing';
-import {defaultPreferences,type CareWorkspace,type CarePreferences,type CareState,type CareNote} from './types';
+import {defaultPreferences,type CareWorkspace,type CarePreferences,type CareState,type CareNote,type DeliveryOutcome} from './types';
 import {preferencesSchema,requestSchema,actionSchema} from './schemas';
 import {readingPreferences,effectiveTime,reminderOnDate,approvedAnswer} from './rules';
 import {careHash,type CareClient,type FamilyActor} from './auth.server';
@@ -14,11 +14,11 @@ export async function loadCare(client:CareClient,circleId:string,member:CareWork
   const {data:circle,error}=await client.from('care_circles').select('id,display_name,timezone,summary_time,preferences').eq('id',circleId).single();check(error);if(!circle)throw new Error('Family unavailable');
   const {date,minute}=localClock(new Date(),circle.timezone);
   const [rem,routines,notes,members,events,history,devices,occ,people]=await Promise.all([
-    client.from('reminders').select('id,local_time,title,detail,critical,snooze_minutes,date_override,confirmed_on').eq('circle_id',circleId).is('deleted_at',null).order('local_time').limit(100),
+    client.from('reminders').select('id,local_time,title,detail,critical,snooze_minutes,date_override,confirmed_on,lead_minutes').eq('circle_id',circleId).is('deleted_at',null).order('local_time').limit(100),
     client.from('care_routines').select('*').eq('circle_id',circleId).order('local_time').limit(50),
     client.from('care_notes').select('*').eq('circle_id',circleId).order('label').limit(100),
     client.from('care_members').select('id,member_name,role,direct_chat_id,notify_order,revoked_at').eq('circle_id',circleId).order('created_at').limit(50),
-    client.from('care_events').select('id,reminder_id,kind,label,actor_name,created_at,acknowledged_by,delivery').eq('circle_id',circleId).order('created_at',{ascending:false}).limit(100),
+    client.from('care_events').select('id,reminder_id,kind,label,actor_name,created_at,acknowledged_by,delivery,delivery_detail').eq('circle_id',circleId).order('created_at',{ascending:false}).limit(100),
     client.from('care_history').select('id,entity,entity_id,label,created_at,undone_at').eq('circle_id',circleId).order('created_at',{ascending:false}).limit(50),
     client.from('g2_devices').select('id,last_seen_at,created_at').eq('circle_id',circleId).order('created_at').limit(50),
     client.from('care_occurrences').select('*').eq('circle_id',circleId).eq('local_date',date).limit(100),
@@ -27,20 +27,28 @@ export async function loadCare(client:CareClient,circleId:string,member:CareWork
   for(const result of [rem,routines,notes,members,events,history,devices,occ,people])check(result.error);
   const legacyNotes:CareNote[]=(people.data??[]).filter(p=>!(notes.data??[]).some(n=>n.label.toLowerCase()===p.name.toLowerCase())).map(p=>({id:p.id,label:p.name,answer:`${p.name} is your ${p.relation}. ${p.note}`,category:'person',phone:'',media_path:null,media_kind:null,updated_at:p.created_at}));
   return {circle:{...circle,preferences:preferences(circle.preferences)},member,date,minute,
-    reminders:(rem.data??[]).filter(r=>reminderOnDate(r.date_override,date)).map(r=>{const o=occ.data?.find(v=>v.reminder_id===r.id);return {...r,state:(r.confirmed_on===date?'done':o?.state??'pending') as CareState,effective_time:effectiveTime(r.local_time,o?.postponed_minute??null),version:o?.version??0,step:o?.step??0};}),
+    reminders:(rem.data??[]).filter(r=>reminderOnDate(r.date_override,date)).map(r=>{const o=occ.data?.find(v=>v.reminder_id===r.id);return {...r,state:(r.confirmed_on===date?'done':o?.state??'pending') as CareState,effective_time:effectiveTime(r.local_time,o?.postponed_minute??null),version:o?.version??0,step:o?.step??0,lead_minutes:Number(r.lead_minutes??0)};}),
     routines:(routines.data??[]).filter(r=>reminderOnDate(r.date_override,date)).map(r=>({...r,steps:Array.isArray(r.steps)?r.steps.filter((s):s is string=>typeof s==='string'):[],progress:typeof r.progress==='object'&&r.progress&&!Array.isArray(r.progress)?Number(r.progress[date]??0):0})),
     notes:[...(notes.data??[]).map(n=>({...n,category:n.category as CareNote['category'],media_kind:n.media_kind as CareNote['media_kind']})),...legacyNotes],
-    members:(members.data??[]).map(m=>({...m,role:m.role as 'owner'|'editor'|'viewer'})),events:events.data??[],history:history.data??[],devices:devices.data??[],
+    members:(members.data??[]).map(m=>({...m,role:m.role as 'owner'|'editor'|'viewer'})),events:(events.data??[]).map(e=>({...e,delivery_detail:e.delivery_detail&&typeof e.delivery_detail==='object'&&!Array.isArray(e.delivery_detail)?Object.fromEntries(Object.entries(e.delivery_detail).map(([chat,outcome])=>[chat,String(outcome)])):null})),history:history.data??[],devices:devices.data??[],
     capabilities:{cocoon:Boolean(process.env['COCOON_BASE_URL']&&process.env['COCOON_API_KEY']),speech:false,battery:false,email:Boolean(process.env['LOVABLE_API_KEY'])}};
 }
-export async function notifyEvent(client:CareClient,circleId:string,eventId:string,text:string,backup=false){
-  const {data:circle}=await client.from('care_circles').select('telegram_chat_id').eq('id',circleId).single();if(!circle)return false;
+export async function notifyEvent(client:CareClient,circleId:string,eventId:string,text:string,backup=false,groupable=false){
+  const {data:circle}=await client.from('care_circles').select('telegram_chat_id,preferences').eq('id',circleId).single();if(!circle)return false;
+  // Routine confirmations can be bundled instead of arriving one message at a time.
+  if(groupable&&preferences(circle.preferences).notifyMode==='digest'){
+    await client.from('care_events').update({delivery:'queued'}).eq('id',eventId).eq('circle_id',circleId).eq('delivery','not_sent');
+    return true;
+  }
   const {data:members}=await client.from('care_members').select('direct_chat_id').eq('circle_id',circleId).is('revoked_at',null).eq('notify_order',backup?2:1).limit(20);
-  const recipients=new Set([circle.telegram_chat_id,...(members??[]).map(m=>m.direct_chat_id).filter((v):v is number=>v!==null)]);
-  const outcomes=await Promise.all([...recipients].map(id=>sendTelegramMessage(id,text).catch(()=>false)));
-  const accepted=outcomes.every(Boolean);
-  await client.from('care_events').update({delivery:accepted?'accepted':'failed'}).eq('id',eventId).eq('circle_id',circleId);
-  return accepted;
+  const recipients=[...new Set([circle.telegram_chat_id,...(members??[]).map(m=>m.direct_chat_id).filter((v):v is number=>v!==null)])];
+  const outcomes=await Promise.all(recipients.map(id=>sendTelegramMessage(id,text).catch(()=>false)));
+  const detail:Record<string,DeliveryOutcome>={};
+  recipients.forEach((id,index)=>{detail[String(id)]=outcomes[index]?'accepted':'failed';});
+  const reached=outcomes.filter(Boolean).length;
+  const delivery=reached===recipients.length?'accepted':reached?'partial':'failed';
+  await client.from('care_events').update({delivery,delivery_detail:detail as Json}).eq('id',eventId).eq('circle_id',circleId);
+  return reached===recipients.length;
 }
 export async function applyOccurrence(client:CareClient,circleId:string,input:z.infer<typeof actionSchema>,actorName:string){
   const {data:circle}=await client.from('care_circles').select('timezone').eq('id',circleId).single();if(!circle)throw new Error('Family unavailable');
@@ -53,7 +61,7 @@ export async function applyOccurrence(client:CareClient,circleId:string,input:z.
   if(result.eventId&&!result.duplicate&&['done','help','decline','later'].includes(input.action)){
     const {data:row}=await client.from('reminders').select('title').eq('id',input.reminderId).eq('circle_id',circleId).single();
     const label=input.action==='done'?'Confirmed (not proof of medication taken)':input.action==='help'?'Asked for help':input.action==='decline'?'Not today — not confirmed':`Asked for ${input.minutes} more minutes`;
-    await notifyEvent(client,circleId,result.eventId,`${label}: ${row?.title??'Reminder'}. ${input.action==='help'?'Please check in.':''}`);
+    await notifyEvent(client,circleId,result.eventId,`${label}: ${row?.title??'Reminder'}. ${input.action==='help'?'Please check in.':''}`,false,input.action!=='help');
   }
   return {ok:true,...result};
 }
@@ -74,7 +82,7 @@ export async function careOperation(actor:FamilyActor,input:z.infer<typeof reque
     const table=entityTable[input.op];const id=input.id??crypto.randomUUID();
     const {data:before}=await client.from(table).select('*').eq('id',id).eq('circle_id',circleId).maybeSingle();if(input.id&&!before)throw new Error('Item unavailable.');
     const at=new Date().toISOString();let values;
-    if(input.op==='reminder')values={id,circle_id:circleId,title:input.title,detail:input.detail||null,local_time:input.local_time,critical:input.critical,snooze_minutes:input.snooze_minutes,date_override:input.date_override,updated_at:at};
+    if(input.op==='reminder')values={id,circle_id:circleId,title:input.title,detail:input.detail||null,local_time:input.local_time,critical:input.critical,snooze_minutes:input.snooze_minutes,date_override:input.date_override,lead_minutes:input.lead_minutes,updated_at:at};
     else if(input.op==='routine')values={id,circle_id:circleId,title:input.title,local_time:input.local_time,steps:input.steps,enabled:input.enabled,date_override:input.date_override,updated_at:at};
     else values={id,circle_id:circleId,label:input.label,answer:input.answer,category:input.category,phone:input.phone,updated_at:at};
     // The explicit branches retain generated database typing for different table shapes.

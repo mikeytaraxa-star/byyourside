@@ -36,7 +36,7 @@ export const Route = createFileRoute('/api/public/g2/sync')({
           ok: true,
           name: circle?.display_name ?? 'Your Loved One',
           date,
-          reminders: workspace.reminders.map(r => ({ id: r.id, time: r.effective_time, text: r.title, ...(r.detail ? { detail: r.detail } : {}), ...(r.critical ? { critical: true } : {}), status: r.state === 'done' ? 'done' : 'pending', careState: r.state, snoozeMinutes: r.snooze_minutes, version: r.version })),
+          reminders: workspace.reminders.map(r => ({ id: r.id, time: r.effective_time, text: r.title, ...(r.detail ? { detail: r.detail } : {}), ...(r.critical ? { critical: true } : {}), status: r.state === 'done' ? 'done' : 'pending', careState: r.state, snoozeMinutes: r.snooze_minutes, version: r.version, leadMinutes: r.lead_minutes })),
           people: workspace.notes.filter(n => n.category === 'person').map(n => ({name:n.label,relation:'familiar person',note:n.answer})),
           notes: workspace.notes,
           routines: workspace.routines,

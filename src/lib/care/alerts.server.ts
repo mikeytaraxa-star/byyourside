@@ -1,7 +1,9 @@
 import type {CareClient} from './auth.server';
+import type {Json} from '@/integrations/supabase/types';
 import {preferences,notifyEvent} from './service.server';
-import {localClock} from '@/lib/reminder-alerts';
+import {localClock,DIGEST_AFTER_MINUTES,GROUPABLE_KINDS,digestText} from '@/lib/reminder-alerts';
 import {toMin} from '@/components/demo/engine';
+import {sendTelegramMessage} from '@/lib/g2-sync.server';
 export async function recordScheduledEvent(client:CareClient,circleId:string,reminderId:string,date:string,kind:string,label:string,accepted:boolean){
   const key=`scheduled:${circleId}:${reminderId}:${date}:${kind}`;
   const {data}=await client.from('care_events').upsert({circle_id:circleId,reminder_id:reminderId,idempotency_key:key,kind,label,delivery:accepted?'accepted':'failed'},{onConflict:'idempotency_key',ignoreDuplicates:true}).select('id');
@@ -19,4 +21,23 @@ export async function runCareAvailability(client:CareClient,circleId:string){
   for(const event of open??[]){const {data:r}=event.reminder_id?await client.from('reminders').select('confirmed_on').eq('id',event.reminder_id).eq('circle_id',circleId).maybeSingle():{data:null};if(r?.confirmed_on===date)continue;
     const {data:claimed}=await client.from('care_events').update({escalated_at:now.toISOString()}).eq('id',event.id).is('escalated_at',null).is('acknowledged_by',null).select('id');if(claimed?.length)await notifyEvent(client,circleId,event.id,`Family follow-up: ${event.label}. No family acknowledgement has been recorded. Please coordinate a direct check-in.`,true);
   }
+}
+/** Bundles routine confirmations into one family message when the family chose that mode. */
+export async function runCareDigest(client:CareClient,circleId:string){
+  const {data:circle}=await client.from('care_circles').select('telegram_chat_id,preferences,timezone').eq('id',circleId).single();if(!circle)return;
+  if(preferences(circle.preferences).notifyMode!=='digest')return;
+  const cutoff=new Date(Date.now()-DIGEST_AFTER_MINUTES*60_000).toISOString();
+  const {data:queued}=await client.from('care_events').select('id,kind,label,created_at').eq('circle_id',circleId).eq('delivery','queued').is('grouped_at',null).lt('created_at',cutoff).in('kind',[...GROUPABLE_KINDS]).order('created_at').limit(20);
+  if(!queued?.length)return;
+  const {date}=localClock(new Date(),circle.timezone);
+  const text=digestText(queued,date);
+  const {data:members}=await client.from('care_members').select('direct_chat_id').eq('circle_id',circleId).is('revoked_at',null).eq('notify_order',1).limit(20);
+  const recipients=[...new Set([circle.telegram_chat_id,...(members??[]).map(m=>m.direct_chat_id).filter((v):v is number=>v!==null)])];
+  const outcomes=await Promise.all(recipients.map(id=>sendTelegramMessage(id,text).catch(()=>false)));
+  const detail:Record<string,string>={};
+  recipients.forEach((id,index)=>{detail[String(id)]=outcomes[index]?'accepted':'failed';});
+  const reached=outcomes.filter(Boolean).length;
+  const delivery=reached===recipients.length?'accepted':reached?'partial':'failed';
+  const groupedAt=new Date().toISOString();
+  for(const event of queued)await client.from('care_events').update({delivery,delivery_detail:detail as Json,grouped_at:groupedAt}).eq('id',event.id).eq('circle_id',circleId);
 }

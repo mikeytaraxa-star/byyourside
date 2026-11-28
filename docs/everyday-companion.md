@@ -13,6 +13,8 @@
 - G2 menu choices preserve tap/swipe/double-tap meanings. Native display stays in the validated regions. Optional reported battery is shown only when supplied by the SDK. Native font sizing is not exposed by SDK 0.0.16; larger text is a phone setting.
 - Approved family-note answers without an AI call. Cocoon-compatible live questions and wording drafts stay server-side when configured; drafts require approval before saving. No other AI provider is used.
 - User-requested Telegram/email notification readiness test. Accepted means accepted by the service, not delivered/read. Email still requires verified sender and approved mailbox.
+- Appointment heads-up: a reminder can carry a family-approved preparation offset (0–180 minutes) shown on the Loved One view and the glasses before it is due. Ordinary confirmations can be grouped into one notice instead of one message each (Settings → ordinary notices), while help requests, missed-reminder alerts and important reminders stay immediate. Each notice records its outcome per recipient.
+- Interface languages: 16 languages cover glasses prompts, the Loved One view and family workspace navigation — English, German, Spanish, French, Italian, Portuguese, Dutch, Polish, Ukrainian, Russian, Turkish, Arabic (right-to-left layout), Hindi, Chinese, Japanese and Korean. Choose one in family workspace Settings, or on the glasses companion screen before pairing; a paired family workspace sets the glasses language. Family-written greetings, reminders and notes always stay in the family's own words. Translations other than English are machine-assisted and have not been reviewed by native speakers.
 
 ## Permissions
 
@@ -26,10 +28,8 @@ The initial upgrade is implemented, but the approved full plan remains open for:
 
 - Telegram Mini App menu registration after publication and a real user `/family`/invitation re-test.
 - Physical G2/R1 validation, including native menu capacity, legibility, battery reporting and permissions.
-- Full offline routine-step replay on G2 (phone steps queue; native steps currently require a successful sync).
-- Appointment preparation offsets, automatic routine selection, and reviewed additional-language translations.
-- Full atomic change-history/undo concurrency hardening and wider live media/export/deletion verification.
-- Grouped ordinary notices and individual recipient delivery tracking; current events record aggregate Telegram acceptance/failure.
+- Appointment preparation offsets, grouped ordinary notices with per-recipient delivery evidence, and offline routine-step replay on G2 are shipped.
+- Automatic routine selection and stronger atomic change-history/undo concurrency hardening remain open, alongside wider live media/export/deletion verification.
 - Live Cocoon inference and actual speech-to-text, blocked by provider access/capability. Sample microphone capture is not transcription.
 - Automated SMS/calls, requiring another provider and approved operating funding; none are presented as working.
 - Sender-domain verification, real approved inbox delivery, and consenting family pilots.

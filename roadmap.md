@@ -1,5 +1,9 @@
 # ByYourSide live integrations
 
+## Interface languages
+
+- [x] Add interface languages beyond English: German, Spanish, French plus the most widely spoken languages (user asked to "add all popular languages"). Covers glasses prompts, the Loved One view and family workspace navigation; family-written greetings, reminders and notes stay in the family's own words. Shipped: 16 languages (English, German, Spanish, French, Italian, Portuguese, Dutch, Polish, Ukrainian, Russian, Turkish, Arabic with right-to-left layout, Hindi, Chinese, Japanese, Korean), chosen in the family workspace settings and on the glasses companion screen. Translations other than English are machine-assisted and have not been reviewed by native speakers.
+
 ## Everyday companion upgrade
 
 - [x] Add private family membership, short-lived access, occurrence actions, and durable offline reminder synchronization.
@@ -11,7 +15,8 @@
 - [x] Verify isolated real-data save/sync/action/readback, duplicate handling, cross-family denial, permissions and device revocation; refresh docs and the Even Hub package. Full suite: 126 tests passed.
 - [ ] Register the Telegram Mini App menu and re-test real /family and invitations — requires publication and user Telegram interaction.
 - [ ] Verify live Cocoon/speech, physical G2/R1, and real email delivery — blocked by provider access, hardware and verified sender/mailbox.
-- [ ] Finish the remainder of the approved expansion: preparation offsets, reviewed additional languages, grouped notices, per-recipient evidence, native offline routine replay and stronger atomic edit/undo recovery. These are not shipped; see docs/everyday-companion.md.
+- [x] Add appointment preparation offsets, grouped ordinary notices, per-recipient delivery evidence and offline routine-step replay on G2.
+- [ ] Finish the remainder of the approved expansion: stronger atomic edit/undo recovery and automatic routine selection. These are not shipped; see docs/everyday-companion.md.
 
 - [x] Prepare managed email sending and a family reminder-alert template for notify.byside.here; email sending remains server-only, with no email queue or database tables.
 - [x] Add /email enrollment with mailbox verification and simultaneous email delivery for 15-minute and critical Telegram alerts; docs updated, full handler flow tested with isolated service doubles, protected runtime endpoints and rendered templates checked.

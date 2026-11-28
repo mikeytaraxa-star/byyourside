@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alertActions, dailySummary, localClock, parseDone, previousDate, shouldSendSummary, type AlertReminder } from './reminder-alerts';
+import { alertActions, dailySummary, DIGEST_AFTER_MINUTES, digestText, GROUPABLE_KINDS, localClock, parseDone, previousDate, shouldSendSummary, type AlertReminder } from './reminder-alerts';
 
 const r = (over: Partial<AlertReminder> = {}): AlertReminder => ({ id: 'a', local_time: '08:00:00', title: 'Blue pill', detail: null, nudged_on: null, alerted_on: null, confirmed_on: null, critical: false, missed_streak: 0, last_missed_on: null, ...over });
 const T = '2026-11-23';
@@ -60,5 +60,22 @@ describe('daily family summary', () => {
     expect(text).toContain('⚠️ 12:00 Lunch');
     expect(text).toContain('⏳ 22:00 Evening pill');
     expect(text).toContain('does not verify that medicine was taken');
+  });
+  it('bundles routine confirmations into one calm update', () => {
+    const text = digestText([
+      { kind: 'done', label: 'Take the blue pill', created_at: '2026-11-28T08:05:00.000Z' },
+      { kind: 'later', label: 'Walk with Anna', created_at: '2026-11-28T09:12:00.000Z' },
+    ], '2026-11-28');
+    expect(text).toContain('ByYourSide · Family updates · 2026-11-28');
+    expect(text).toContain('Confirmed · Take the blue pill');
+    expect(text).toContain('A little later · Walk with Anna');
+    expect(text).toContain('Important alerts still arrive immediately');
+  });
+  it('never bundles help or missed-reminder alerts', () => {
+    expect(GROUPABLE_KINDS).not.toContain('help');
+    expect(GROUPABLE_KINDS).not.toContain('alert');
+    expect(GROUPABLE_KINDS).not.toContain('critical');
+    expect(GROUPABLE_KINDS).toContain('done');
+    expect(DIGEST_AFTER_MINUTES).toBe(10);
   });
 });

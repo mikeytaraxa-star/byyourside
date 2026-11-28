@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { loadFamilyEmail, deliverReminderAlert } = await import("@/lib/email-alerts.server");
-        const { recordScheduledEvent, runCareAvailability } = await import("@/lib/care/alerts.server");
+        const { recordScheduledEvent, runCareAvailability, runCareDigest } = await import("@/lib/care/alerts.server");
         const { preferences } = await import("@/lib/care/service.server");
         const { effectiveTime, inQuietPeriod } = await import("@/lib/care/rules");
         const { data: circles, error } = await supabaseAdmin.from("care_circles").select("id, telegram_chat_id, timezone, summary_time, summary_sent_on, preferences").order("id").limit(1000);
@@ -105,6 +105,7 @@ export const Route = createFileRoute("/api/public/jobs/reminder-alerts")({
             }
           }
           await runCareAvailability(supabaseAdmin, circle.id);
+          await runCareDigest(supabaseAdmin, circle.id);
         }
         return Response.json({ ok: failures.length === 0, sent, emailsSent, emailsSuppressed, emailsFailed, failures });
       },
